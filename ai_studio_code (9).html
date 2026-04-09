@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiscalização Cacoal - SEMPLAN</title>
+    
+    <!-- Biblioteca Geradora de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* =========================================================
+           INTERFACE DO USUÁRIO (CELULAR)
+           ========================================================= */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; color: #333; }
+        * { box-sizing: border-box; }
+        
+        #app-container { max-width: 600px; margin: 0 auto; padding: 15px; padding-bottom: 50px; }
+        header { background: #003366; color: #fff; padding: 15px; text-align: center; font-size: 1.2em; font-weight: bold; border-radius: 8px; margin-bottom: 15px; }
+        
+        .card { background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h3 { color: #003366; border-bottom: 2px solid #003366; padding-bottom: 5px; margin-top: 0; }
+        
+        .btn { display: block; width: 100%; padding: 15px; color: #fff; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-bottom: 10px; text-transform: uppercase; }
+        .btn-blue { background: #003366; }
+        .btn-orange { background: #d35400; }
+        .btn-green { background: #198754; font-size: 1.2em; padding: 20px; }
+        .btn-outline { background: transparent; color: #003366; border: 2px solid #003366; }
+        
+        .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+        .col { flex: 1; min-width: 120px; }
+        label { display: block; font-size: 0.8em; font-weight: bold; margin-bottom: 5px; color: #555; text-transform: uppercase; }
+        input[type="text"], input[type="number"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1em; background: #fafafa; }
+        
+        /* Sanfonas para organizar os formulários */
+        details { background: #f8f9fa; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 10px; }
+        summary { font-weight: bold; padding: 15px; cursor: pointer; color: #003366; user-select: none; }
+        details[open] summary { border-bottom: 1px solid #ccc; }
+        .details-body { padding: 15px; background: #fff; }
+
+        /* Botões de Seleção Fáceis de Tocar */
+        .chip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 15px; }
+        .chip-grid label { background: #eee; border: 1px solid #ccc; padding: 10px 5px; border-radius: 6px; text-align: center; cursor: pointer; font-size: 0.85em; display: flex; flex-direction: column; justify-content: center; }
+        .chip-grid input { display: none; }
+        .chip-grid label:has(input:checked) { background: #003366; color: #fff; border-color: #002244; font-weight: bold; }
+        .pts { font-size: 0.8em; opacity: 0.8; margin-top: 3px; }
+
+        .visor-pontos { background: #e8f5e9; border: 2px dashed #28a745; border-radius: 8px; padding: 15px; text-align: center; margin-top: 15px; color: #28a745; }
+        .visor-pontos h2 { margin: 0; font-size: 2.5em; }
+
+        .hidden { display: none !important; }
+
+        /* =========================================================
+           A MÁGICA: O MOLDE DO PDF A4
+           ========================================================= */
+        #pdf-template {
+            display: none; /* Fica oculto até a hora de gerar */
+            width: 794px; /* Largura EXATA de uma folha A4 a 96dpi */
+            background: #fff;
+            color: #000;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            padding: 30px;
+            margin: 0 auto;
+        }
+        .pdf-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .pdf-title { text-align: center; font-weight: bold; font-size: 16px; text-decoration: underline; margin-bottom: 15px; text-transform: uppercase; }
+        
+        .pdf-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .pdf-table th, .pdf-table td { border: 1px solid #000; padding: 6px; vertical-align: middle; }
+        .pdf-table th { background: #e9e9e9; text-align: left; font-size: 11px; }
+        .pdf-section { background: #d0d0d0; text-align: center; font-weight: bold; font-size: 13px; padding: 5px; border: 1px solid #000; border-bottom: none; }
+    </style>
+</head>
+<body>
+
+    <!-- CONTAINER DO APLICATIVO -->
+    <div id="app-container">
+        <header>SEMPLAN - Fiscalização Obras e Posturas</header>
+
+        <!-- PASSO 1: MENU -->
+        <div id="step-1" class="card">
+            <h3>Novo Documento</h3>
+            <button class="btn btn-blue" onclick="abrirFormulario('vazio')">Terreno Vazio</button>
+            <button class="btn btn-blue" onclick="abrirFormulario('construido')">Terreno Construído</button>
+            <button class="btn btn-blue" onclick="abrirFormulario('vistoria')">Relatório Vistoria Fiscal</button>
+            <button class="btn btn-orange" onclick="abrirFormulario('bic')">BIC / Termo de Conclusão</button>
+        </div>
+
+        <!-- PASSO 2: FORMULÁRIOS -->
+        <div id="step-2" class="hidden">
+            <button class="btn btn-outline" onclick="voltar()">← Trocar Documento</button>
+            <h3 id="form-titulo" style="text-align: center;">Formulário</h3>
+
+            <!-- 1. IDENTIFICAÇÃO GERAL -->
+            <details open>
+                <summary>1. IDENTIFICAÇÃO DO IMÓVEL</summary>
+                <div class="details-body">
+                    <div class="row">
+                        <div class="col" id="div-processo"><label>Processo N°</label><input type="text" id="processo"></div>
+                        <div class="col" id="div-inscricao"><label>Inscrição Cadastral</label><input type="text" id="inscricao"></div>
+                        <div class="col" id="div-zona"><label>Zona Fiscal</label><input type="text" id="zona"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>Setor</label><input type="text" id="setor"></div>
+                        <div class="col"><label>Quadra</label><input type="text" id="quadra"></div>
+                        <div class="col"><label>Lote</label><input type="text" id="lote"></div>
+                        <div class="col" id="div-sublote"><label>Sub Lote</label><input type="text" id="sublote"></div>
+                    </div>
+                    <label>Proprietário / Compromissário</label><input type="text" id="proprietario">
+                    <label id="lbl-fantasia">Nome Fantasia / Posseiro</label><input type="text" id="fantasia">
+                    <div class="row">
+                        <div class="col" style="flex:2"><label>Logradouro (Rua, Av)</label><input type="text" id="endereco"></div>
+                        <div class="col"><label>Bairro</label><input type="text" id="bairro"></div>
+                    </div>
+                </div>
+            </details>
+
+            <!-- 2. TERRENO -->
+            <details>
+                <summary>2. TERRENO E SERVIÇOS</summary>
+                <div class="details-body">
+                    <label>Topografia</label>
+                    <div class="chip-grid">
+                        <label><input type="radio" name="topografia" value="Aclive">Aclive</label>
+                        <label><input type="radio" name="topografia" value="Declive">Declive</label>
+                        <label><input type="radio" name="topografia" value="Regular">Regular</label>
+                        <label><input type="radio" name="topografia" value="Irregular">Irregular</label>
+                    </div>
+                    <label>Pedologia (Solo)</label>
+                    <div class="chip-grid">
+                        <label><input type="radio" name="pedologia" value="Rochoso">Rochoso</label>
+                        <label><input type="radio" name="pedologia" value="Brejo">Brejo</label>
+                        <label><input type="radio" name="pedologia" value="Inundável">Inundável</label>
+                        <label><input type="radio" name="pedologia" value="Firme">Firme</label>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>Área "NON AEDIFICANT"?</label>
+                            <div class="chip-grid"><label><input type="radio" name="non_aed" value="SIM">SIM</label><label><input type="radio" name="non_aed" value="NÃO">NÃO</label></div>
+                        </div>
+                        <div class="col"><label>Curso D'Água Próximo?</label>
+                            <div class="chip-grid"><label><input type="radio" name="agua_prox" value="SIM">SIM</label><label><input type="radio" name="agua_prox" value="NÃO">NÃO</label></div>
+                        </div>
+                    </div>
+                    <label>Serviços Públicos Identificados</label>
+                    <div class="chip-grid">
+                        <label><input type="checkbox" name="servicos" value="Guia">Guia</label>
+                        <label><input type="checkbox" name="servicos" value="Sarjeta">Sarjeta</label>
+                        <label><input type="checkbox" name="servicos" value="Passeio">Passeio</label>
+                        <label><input type="checkbox" name="servicos" value="Pavimentação">Pavimen.</label>
+                        <label><input type="checkbox" name="servicos" value="Água">Água</label>
+                        <label><input type="checkbox" name="servicos" value="Esgoto">Esgoto</label>
+                        <label><input type="checkbox" name="servicos" value="Energia">Energia</label>
+                        <label><input type="checkbox" name="servicos" value="Iluminação">Iluminação</label>
+                        <label><input type="checkbox" name="servicos" value="Coleta Lixo">Lixo</label>
+                        <label><input type="checkbox" name="servicos" value="Arborização">Arborização</label>
+                        <label><input type="checkbox" name="servicos" value="Limpeza">Limpeza</label>
+                    </div>
+                </div>
+            </details>
+
+            <!-- 3A. VISTORIA FISCAL -->
+            <details id="bloco-vistoria" class="hidden">
+                <summary>3. DADOS DE VISTORIA</summary>
+                <div class="details-body">
+                    <div class="row">
+                        <div class="col"><label>Obra Iniciada?</label><div class="chip-grid"><label><input type="radio" name="obra_ini" value="SIM">SIM</label><label><input type="radio" name="obra_ini" value="NÃO">NÃO</label></div></div>
+                        <div class="col"><label>Projeto Aprovado?</label><div class="chip-grid"><label><input type="radio" name="proj_aprov" value="SIM">SIM</label><label><input type="radio" name="proj_aprov" value="NÃO">NÃO</label></div></div>
+                    </div>
+                    <label>Construção para Qual Fim?</label>
+                    <div class="chip-grid">
+                        <label><input type="radio" name="fim_obra" value="Industrial">Indústrial</label>
+                        <label><input type="radio" name="fim_obra" value="Comercial">Comercial</label>
+                        <label><input type="radio" name="fim_obra" value="Residencial">Residencial</label>
+                        <label><input type="radio" name="fim_obra" value="Mista">Mista</label>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>Recuo Frontal(m)</label><input type="text" id="recuo_fr"></div>
+                        <div class="col"><label>Recuo Direito(m)</label><input type="text" id="recuo_dr"></div>
+                        <div class="col"><label>Recuo Esquerdo(m)</label><input type="text" id="recuo_es"></div>
+                    </div>
+                    <label>Zoneamento</label><input type="text" id="zoneamento">
+                </div>
+            </details>
+
+            <!-- 3B. CONSTRUÍDO SIMPLES -->
+            <details id="bloco-construido" class="hidden">
+                <summary>3. DADOS DA EDIFICAÇÃO</summary>
+                <div class="details-body">
+                    <label>Material Predominante</label>
+                    <div class="chip-grid"><label><input type="radio" name="mat_simples" value="Madeira">Madeira</label><label><input type="radio" name="mat_simples" value="Alvenaria">Alvenaria</label><label><input type="radio" name="mat_simples" value="Mista">Mista</label></div>
+                    <label>Conservação</label>
+                    <div class="chip-grid"><label><input type="radio" name="cons_simples" value="Novo">Novo</label><label><input type="radio" name="cons_simples" value="Bom">Bom</label><label><input type="radio" name="cons_simples" value="Regular">Regular</label><label><input type="radio" name="cons_simples" value="Ruim">Ruim</label></div>
+                    <div class="row"><div class="col"><label>Área Medindo (m²)</label><input type="text" id="area_simples"></div></div>
+                </div>
+            </details>
+
+            <!-- 3C. BIC (CLASSIFICAÇÃO COMPLETA OCR) -->
+            <details id="bloco-bic" class="hidden">
+                <summary>4. CLASSIFICAÇÃO BIC (MATEMÁTICA)</summary>
+                <div class="details-body">
+                    
+                    <label>Estrutura</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_1" value="1" data-n="Taipa">Taipa <span class="pts">1pt</span></label>
+                        <label><input type="radio" name="bic_1" value="2" data-n="Mad. Taipa">Mad.Taipa <span class="pts">2pt</span></label>
+                        <label><input type="radio" name="bic_1" value="3" data-n="Alv/Taipa">Alv/Taipa <span class="pts">3pt</span></label>
+                        <label><input type="radio" name="bic_1" value="5" data-n="Madeira">Madeira <span class="pts">5pt</span></label>
+                        <label><input type="radio" name="bic_1" value="10" data-n="Alvenaria">Alvenaria <span class="pts">10pt</span></label>
+                        <label><input type="radio" name="bic_1" value="15" data-n="Concreto">Concreto <span class="pts">15pt</span></label>
+                    </div>
+
+                    <label>Cobertura</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_2" value="1" data-n="Palha">Palha <span class="pts">1pt</span></label>
+                        <label><input type="radio" name="bic_2" value="3" data-n="Amianto Comum">Am.Comum <span class="pts">3pt</span></label>
+                        <label><input type="radio" name="bic_2" value="5" data-n="Amianto Esp">Am.Esp <span class="pts">5pt</span></label>
+                        <label><input type="radio" name="bic_2" value="7" data-n="Telha">Telha <span class="pts">7pt</span></label>
+                        <label><input type="radio" name="bic_2" value="10" data-n="Laje">Laje <span class="pts">10pt</span></label>
+                    </div>
+
+                    <label>Piso</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_3" value="0" data-n="Terra">Terra <span class="pts">0pt</span></label>
+                        <label><input type="radio" name="bic_3" value="4" data-n="Cimento">Cimento <span class="pts">4pt</span></label>
+                        <label><input type="radio" name="bic_3" value="7" data-n="Cerâmica">Cerâmica <span class="pts">7pt</span></label>
+                        <label><input type="radio" name="bic_3" value="12" data-n="Especial">Especial <span class="pts">12pt</span></label>
+                    </div>
+
+                    <label>Revestimento Externo</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_4" value="0" data-n="Sem">Sem <span class="pts">0pt</span></label>
+                        <label><input type="radio" name="bic_4" value="3" data-n="Reboco">Reboco <span class="pts">3pt</span></label>
+                        <label><input type="radio" name="bic_4" value="8" data-n="Massa">Massa <span class="pts">8pt</span></label>
+                        <label><input type="radio" name="bic_4" value="15" data-n="Especial">Especial <span class="pts">15pt</span></label>
+                    </div>
+
+                    <label>Revestimento Interno</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_5" value="0" data-n="Sem">Sem <span class="pts">0pt</span></label>
+                        <label><input type="radio" name="bic_5" value="3" data-n="Reboco">Reboco <span class="pts">3pt</span></label>
+                        <label><input type="radio" name="bic_5" value="8" data-n="Massa">Massa <span class="pts">8pt</span></label>
+                        <label><input type="radio" name="bic_5" value="15" data-n="Cerâmica">Cerâmica <span class="pts">15pt</span></label>
+                    </div>
+
+                    <label>Forro</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_6" value="0" data-n="Sem">Sem <span class="pts">0pt</span></label>
+                        <label><input type="radio" name="bic_6" value="2" data-n="Mad. Comum">Mad.Comum <span class="pts">2pt</span></label>
+                        <label><input type="radio" name="bic_6" value="9" data-n="Estuque">Estuque <span class="pts">9pt</span></label>
+                        <label><input type="radio" name="bic_6" value="15" data-n="Laje">Laje <span class="pts">15pt</span></label>
+                    </div>
+
+                    <label>Acabamento Externo (Pintura)</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_7" value="0" data-n="Sem">Sem <span class="pts">0pt</span></label>
+                        <label><input type="radio" name="bic_7" value="5" data-n="Pint. Comum">Comum <span class="pts">5pt</span></label>
+                        <label><input type="radio" name="bic_7" value="9" data-n="Lavável">Lavável <span class="pts">9pt</span></label>
+                        <label><input type="radio" name="bic_7" value="14" data-n="Especial">Especial <span class="pts">14pt</span></label>
+                    </div>
+
+                    <label>Cozinha</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_8" value="0" data-n="Sem Pia">Sem Pia <span class="pts">0pt</span></label>
+                        <label><input type="radio" name="bic_8" value="5" data-n="Pia Simples">Pia Simples <span class="pts">5pt</span></label>
+                        <label><input type="radio" name="bic_8" value="14" data-n="Azulejo Teto">Azul. Teto <span class="pts">14pt</span></label>
+                    </div>
+
+                    <label>Banheiro (Inst. Sanitárias)</label>
+                    <div class="chip-grid calc-bic">
+                        <label><input type="radio" name="bic_9" value="0" data-n="Precária">Precária <span class="pts">0pt</span></label>
+                        <label><input type="radio" name="bic_9" value="2" data-n="Inc. Externa">Inc.Ext <span class="pts">2pt</span></label>
+                        <label><input type="radio" name="bic_9" value="9" data-n="Completa">Completa <span class="pts">9pt</span></label>
+                        <label><input type="radio" name="bic_9" value="10" data-n="Luxo">Luxo <span class="pts">10pt</span></label>
+                    </div>
+
+                    <div class="row">
+                        <div class="col"><label>Testadas:</label><input type="number" id="testadas" value="1"></div>
+                        <div class="col"><label>Qtd Cômodos:</label><input type="number" id="comodos" value="4"></div>
+                    </div>
+
+                    <div class="visor-pontos">
+                        <p style="margin:0; font-weight:bold;">SOMA TOTAL DE PONTOS</p>
+                        <h2 id="visor-pts">0</h2>
+                        <p id="visor-padrao" style="margin:5px 0 0 0; font-weight:bold;">PADRÃO: ---</p>
+                    </div>
+                </div>
+            </details>
+
+            <!-- OBSERVAÇÃO E FOTO -->
+            <details open>
+                <summary>ANEXOS (OBS E FOTO)</summary>
+                <div class="details-body">
+                    <label>Observações do Fiscal</label>
+                    <textarea id="observacao" rows="3"></textarea>
+                    
+                    <label style="margin-top:10px;">Foto IN LOCO</label>
+                    <input type="file" id="foto-input" accept="image/*" style="background:#fff;">
+                    <img id="foto-preview" style="width:100%; border-radius:6px; display:none; margin-top:10px;">
+                </div>
+            </details>
+
+            <button class="btn btn-green" onclick="prepararGeracaoPDF()">GERAR PDF OFICIAL</button>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MOLDE DO PDF (Apenas aparece na hora de gerar)
+         ========================================================= -->
+    <div id="pdf-template">
+        <div class="pdf-header">
+            <b>ESTADO DE RONDÔNIA</b><br>
+            <b>PREFEITURA MUNICIPAL DE CACOAL</b><br>
+            SECRETARIA MUNICIPAL DE PLANEJAMENTO - SEMPLAN<br>
+            Depart. de Fiscalização de Obras e Posturas
+        </div>
+        
+        <div id="pdf-titulo" class="pdf-title">RELATÓRIO CIRCUNSTANCIADO</div>
+        
+        <!-- O CONTEÚDO ENTRA AQUI -->
+        <div id="pdf-conteudo"></div>
+        
+        <div style="margin-top: 50px; text-align: center;">
+            Cacoal, RO - <span id="pdf-data"></span><br><br><br>
+            _________________________________________________________<br>
+            <b>Assinatura / Matrícula do Fiscal</b>
+        </div>
+
+        <!-- FOTO -->
+        <div id="pdf-foto-wrap" style="page-break-before: always; display: none;">
+            <div class="pdf-title" style="margin-top:20px;">REGISTRO FOTOGRÁFICO IN LOCO</div>
+            <div style="text-align: center;">
+                <img id="pdf-foto-final" style="max-width: 100%; max-height: 700px; border: 1px solid #000;">
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS MESTRES -->
+    <script>
+        let docAtual = "";
+        let base64Foto = "";
+        let calcBic = { total: 0, padrao: "N/A" };
+
+        // CONTROLA TELAS E CAMPOS
+        function abrirFormulario(tipo) {
+            docAtual = tipo;
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            
+            // Oculta tudo específico
+            ['div-processo', 'div-inscricao', 'div-zona', 'div-sublote', 'bloco-vistoria', 'bloco-construido', 'bloco-bic'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            // Mostra baseado na escolha
+            if(tipo === 'vazio') {
+                document.getElementById('form-titulo').innerText = "TERRENO VAZIO";
+            } else if(tipo === 'construido') {
+                document.getElementById('form-titulo').innerText = "TERRENO CONSTRUÍDO";
+                document.getElementById('bloco-construido').classList.remove('hidden');
+            } else if(tipo === 'vistoria') {
+                document.getElementById('form-titulo').innerText = "VISTORIA FISCAL";
+                ['div-processo', 'div-sublote', 'bloco-vistoria'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+            } else if(tipo === 'bic') {
+                document.getElementById('form-titulo').innerText = "BIC / CONCLUSÃO DE OBRA";
+                ['div-processo', 'div-inscricao', 'div-zona', 'div-sublote', 'bloco-bic'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+            }
+        }
+
+        function voltar() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-1').classList.remove('hidden');
+        }
+
+        // CARREGA IMAGEM EM BASE64
+        document.getElementById('foto-input').addEventListener('change', function(e) {
+            let file = e.target.files[0];
+            if(file) {
+                let reader = new FileReader();
+                reader.onload = function(evt) {
+                    base64Foto = evt.target.result;
+                    document.getElementById('foto-preview').src = base64Foto;
+                    document.getElementById('foto-preview').style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // CÁLCULO DO BIC
+        document.querySelectorAll('.calc-bic input').forEach(el => el.addEventListener('change', somarBIC));
+        
+        function somarBIC() {
+            if(docAtual !== 'bic') return;
+            let total = 0;
+            for(let i=1; i<=9; i++) {
+                let radio = document.querySelector(`input[name="bic_${i}"]:checked`);
+                if(radio) total += parseInt(radio.value);
+            }
+            
+            let p = "Precária";
+            if(total >= 19 && total <= 30) p = "Baixa";
+            if(total >= 31 && total <= 40) p = "Popular";
+            if(total >= 41 && total <= 60) p = "Média";
+            if(total >= 61 && total <= 85) p = "Boa";
+            if(total >= 86 && total <= 120) p = "Alta";
+            if(total > 120) p = "Luxo";
+
+            document.getElementById('visor-pts').innerText = total;
+            document.getElementById('visor-padrao').innerText = "PADRÃO: " + p.toUpperCase();
+            calcBic = { total: total, padrao: p.toUpperCase() };
+        }
+
+        // FUNÇÕES EXTRATORAS
+        function val(id) { return document.getElementById(id).value.trim() || ""; }
+        function rad(name) { let r = document.querySelector(`input[name="${name}"]:checked`); return r ? r.value : "---"; }
+        function chks(name) {
+            let els = document.querySelectorAll(`input[name="${name}"]:checked`);
+            return els.length ? Array.from(els).map(e => e.value).join(", ") : "Nenhum";
+        }
+        function x(name, param) {
+            let r = document.querySelector(`input[name="${name}"]:checked`);
+            return (r && r.value === param) ? "( X )" : "( &nbsp;&nbsp; )";
+        }
+        function bicN(n) { let r = document.querySelector(`input[name="bic_${n}"]:checked`); return r ? r.getAttribute('data-n') : "---"; }
+        function bicP(n) { let r = document.querySelector(`input[name="bic_${n}"]:checked`); return r ? r.value : "0"; }
+
+        // ==============================================================
+        // ESTRUTURADOR DO PDF E RESOLUÇÃO DO BUG DO PDF BRANCO
+        // ==============================================================
+        function prepararGeracaoPDF() {
+            let html = "";
+
+            // BLOCO: IDENTIFICAÇÃO (Comum a todos)
+            html += `<div class="pdf-section">IDENTIFICAÇÃO GERAL</div>
+            <table class="pdf-table">
+                <tr><td colspan="4"><b>Proprietário / Razão Social:</b> ${val('proprietario')}</td></tr>
+                <tr><td colspan="4"><b>Endereço / Logradouro:</b> ${val('endereco')} &nbsp;&nbsp; <b>Bairro:</b> ${val('bairro')}</td></tr>
+                <tr>
+                    <td><b>Setor:</b> ${val('setor')}</td>
+                    <td><b>Quadra:</b> ${val('quadra')}</td>
+                    <td><b>Lote:</b> ${val('lote')}</td>
+                    <td><b>Sub Lote:</b> ${val('sublote')}</td>
+                </tr>`;
+            if(docAtual === 'vistoria' || docAtual === 'bic') {
+                html += `<tr><td colspan="2"><b>Inscrição Cadastral:</b> ${val('inscricao')}</td><td colspan="2"><b>Processo:</b> ${val('processo')}</td></tr>`;
+            }
+            html += `</table>`;
+
+            // BLOCO: TERRENO (Comum a todos)
+            html += `<div class="pdf-section">CARACTERÍSTICAS DO TERRENO E SERVIÇOS</div>
+            <table class="pdf-table">
+                <tr>
+                    <td><b>Topografia:</b><br>${x('topografia','Aclive')} Aclive<br>${x('topografia','Declive')} Declive<br>${x('topografia','Regular')} Regular</td>
+                    <td><b>Pedologia:</b><br>${x('pedologia','Rochoso')} Rochoso<br>${x('pedologia','Brejo')} Brejo<br>${x('pedologia','Firme')} Firme</td>
+                    <td><b>NON AEDIFICANT:</b> ${rad('non_aed')}<br><br><b>Curso D'Água Próximo:</b> ${rad('agua_prox')}</td>
+                </tr>
+                <tr><td colspan="3"><b>Serviços Públicos:</b> ${chks('servicos')}</td></tr>
+            </table>`;
+
+            // BLOCO: ESPECÍFICO
+            if(docAtual === 'vazio') {
+                document.getElementById('pdf-titulo').innerText = "RELATÓRIO CIRCUNSTANCIADO - TERRENO VAZIO";
+                html += `<table class="pdf-table"><tr><td style="text-align:center; padding:15px; font-size:14px;">Em vistoria "in loco", foi constatado que o respectivo imóvel encontra-se em situação <b>VAZIO</b>.</td></tr></table>`;
+            } 
+            else if(docAtual === 'construido') {
+                document.getElementById('pdf-titulo').innerText = "RELATÓRIO CIRCUNSTANCIADO - TERRENO CONSTRUÍDO";
+                html += `<div class="pdf-section">DADOS DA EDIFICAÇÃO</div>
+                <table class="pdf-table">
+                    <tr>
+                        <td><b>Material:</b> ${rad('mat_simples')}</td>
+                        <td><b>Conservação:</b> ${rad('cons_simples')}</td>
+                        <td><b>Área Medindo:</b> ${val('area_simples')} m²</td>
+                    </tr>
+                </table>`;
+            }
+            else if(docAtual === 'vistoria') {
+                document.getElementById('pdf-titulo').innerText = "RELATÓRIO DE VISTORIA FISCAL";
+                html += `<div class="pdf-section">INFORMAÇÕES DA OBRA</div>
+                <table class="pdf-table">
+                    <tr><td><b>Obra Iniciada?</b> ${rad('obra_ini')}</td><td><b>Proj. Aprovado?</b> ${rad('proj_aprov')}</td><td><b>Finalidade:</b> ${rad('fim_obra')}</td></tr>
+                    <tr><td><b>Recuo Frontal:</b> ${val('recuo_fr')} m</td><td><b>Recuo Direito:</b> ${val('recuo_dr')} m</td><td><b>Recuo Esq:</b> ${val('recuo_es')} m</td></tr>
+                    <tr><td colspan="3"><b>Zoneamento:</b> ${val('zoneamento')}</td></tr>
+                </table>`;
+            }
+            else if(docAtual === 'bic') {
+                document.getElementById('pdf-titulo').innerText = "BOLETIM DE INFORMAÇÕES CADASTRAIS (BIC)";
+                html += `<div class="pdf-section">CLASSIFICAÇÃO E PONTUAÇÃO (BIC)</div>
+                <table class="pdf-table">
+                    <tr><th>Item Avaliado</th><th>Material</th><th>Pts</th><th>Item Avaliado</th><th>Material</th><th>Pts</th></tr>
+                    <tr><td>Estrutura</td><td>${bicN(1)}</td><td>${bicP(1)}</td><td>Forro</td><td>${bicN(6)}</td><td>${bicP(6)}</td></tr>
+                    <tr><td>Cobertura</td><td>${bicN(2)}</td><td>${bicP(2)}</td><td>Pintura/Acab.</td><td>${bicN(7)}</td><td>${bicP(7)}</td></tr>
+                    <tr><td>Piso</td><td>${bicN(3)}</td><td>${bicP(3)}</td><td>Cozinha</td><td>${bicN(8)}</td><td>${bicP(8)}</td></tr>
+                    <tr><td>Rev. Externo</td><td>${bicN(4)}</td><td>${bicP(4)}</td><td>Banheiro</td><td>${bicN(9)}</td><td>${bicP(9)}</td></tr>
+                    <tr><td>Rev. Interno</td><td>${bicN(5)}</td><td>${bicP(5)}</td><td>Cômodos Qtd</td><td>-</td><td>${val('comodos')}</td></tr>
+                </table>
+                <table class="pdf-table">
+                    <tr>
+                        <td style="text-align:center; font-size:14px;"><b>SOMA DE PONTOS:</b> ${calcBic.total}</td>
+                        <td style="text-align:center; font-size:14px; color:red;"><b>PADRÃO CALCULADO:</b> ${calcBic.padrao}</td>
+                    </tr>
+                </table>`;
+            }
+
+            // OBSERVAÇÃO
+            let obs = document.getElementById('observacao').value.trim();
+            if(obs) {
+                html += `<div class="pdf-section">OBSERVAÇÕES DO FISCAL</div><table class="pdf-table"><tr><td>${obs}</td></tr></table>`;
+            }
+
+            // INJETA TUDO
+            document.getElementById('pdf-conteudo').innerHTML = html;
+            document.getElementById('pdf-data').innerText = new Date().toLocaleDateString('pt-BR');
+            
+            if(base64Foto) {
+                document.getElementById('pdf-foto-final').src = base64Foto;
+                document.getElementById('pdf-foto-wrap').style.display = 'block';
+            } else {
+                document.getElementById('pdf-foto-wrap').style.display = 'none';
+            }
+
+            // =========================================================
+            // GERAÇÃO GARANTIDA: ESCONDE O APP, MOSTRA O PDF, TIRA A FOTO.
+            // =========================================================
+            const app = document.getElementById('app-container');
+            const pdfTemplate = document.getElementById('pdf-template');
+            
+            app.style.display = 'none'; // Some o celular
+            pdfTemplate.style.display = 'block'; // Mostra o A4
+
+            let opt = {
+                margin:       10,
+                filename:     `Fiscalizacao_Lote_${val('lote')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Dá 1 segundo para o navegador desenhar a tela e as imagens perfeitamente
+            setTimeout(() => {
+                html2pdf().set(opt).from(pdfTemplate).save().then(() => {
+                    // Retorna ao estado normal
+                    pdfTemplate.style.display = 'none';
+                    app.style.display = 'block';
+                });
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
