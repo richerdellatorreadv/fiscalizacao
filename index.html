@@ -648,7 +648,7 @@
                     </div>
                     <input type="file" id="camera-input" accept="image/*" capture="environment" multiple style="display:none;">
                     <input type="file" id="foto-input"   accept="image/*" multiple style="display:none;">
-                    <div id="foto-preview-grid" style="display:none; margin-top:6px; flex-wrap:wrap; gap:8px;"></div>
+                    <div id="foto-preview-grid" style="display:none; margin-top:6px; flex-wrap:wrap; gap:8px; align-items:flex-start;"></div>
                 </div>
             </details>
 
@@ -802,12 +802,17 @@
         }
 
         function voltar() {
-            if (!restaurando && temDadosPreenchidos()) {
+            // Salva apenas se há dados reais E não estamos restaurando
+            if (!restaurando && docAtual && temDadosPreenchidos()) {
                 _salvarOuAtualizar();
                 toast('📋 Salvo no histórico automaticamente');
             }
-            limparFormulario();
+            // Zera estado ANTES de limpar para evitar salvamentos fantasmas
+            docAtual = '';
             historicIdAtivo = null;
+            restaurando = false;
+            limparFormulario();
+            // Garante retorno à tela inicial independente de qualquer estado assíncrono
             document.getElementById('step-2').classList.add('hidden');
             document.getElementById('step-1').classList.remove('hidden');
             atualizarContadores();
@@ -815,31 +820,19 @@
 
         // CARREGA IMAGENS EM BASE64 (múltiplas) — galeria e câmera
         function processarFotos(files) {
-            const grid = document.getElementById('foto-preview-grid');
-            const startIdx = base64Fotos.length; // acumula, não substitui
-            if (!files.length) return;
-            let carregadas = 0;
+            if (!files || !files.length) return;
+            let pendentes = files.length;
+            const novasFotos = new Array(files.length);
             Array.from(files).forEach((file, i) => {
-                const idx = startIdx + i;
                 const reader = new FileReader();
                 reader.onload = function(evt) {
-                    base64Fotos[idx] = evt.target.result;
-                    const wrap = document.createElement('div');
-                    wrap.style.cssText = 'position:relative; width:calc(33% - 6px);';
-                    const img = document.createElement('img');
-                    img.src = evt.target.result;
-                    img.style.cssText = 'width:100%; height:80px; object-fit:cover; border-radius:8px; border:1.5px solid var(--border);';
-                    const badge = document.createElement('span');
-                    badge.innerText = idx + 1;
-                    badge.style.cssText = 'position:absolute; top:4px; left:4px; background:var(--navy); color:#fff; font-size:.7em; font-weight:bold; padding:2px 6px; border-radius:4px;';
-                    const del = document.createElement('button');
-                    del.innerText = '✕';
-                    del.style.cssText = 'position:absolute; top:4px; right:4px; background:var(--red); color:#fff; border:none; border-radius:4px; width:20px; height:20px; font-size:.7em; cursor:pointer; display:flex; align-items:center; justify-content:center;';
-                    del.onclick = () => { base64Fotos.splice(idx,1); renderFotoGrid(); };
-                    wrap.appendChild(img); wrap.appendChild(badge); wrap.appendChild(del);
-                    grid.appendChild(wrap);
-                    carregadas++;
-                    if (carregadas === files.length) grid.style.display = 'flex';
+                    novasFotos[i] = evt.target.result;
+                    pendentes--;
+                    if (pendentes === 0) {
+                        // Todas carregadas: acumula no array global e re-renderiza UMA vez
+                        base64Fotos = base64Fotos.concat(novasFotos);
+                        renderFotoGrid();
+                    }
                 };
                 reader.readAsDataURL(file);
             });
