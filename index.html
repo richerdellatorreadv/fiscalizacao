@@ -9,91 +9,415 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* =========================================================
-           INTERFACE DO USUÁRIO (CELULAR)
-           ========================================================= */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; color: #333; }
-        * { box-sizing: border-box; }
-        
-        #app-container { max-width: 600px; margin: 0 auto; padding: 15px; padding-bottom: 50px; }
-        header { background: #003366; color: #fff; padding: 15px; text-align: center; font-size: 1.2em; font-weight: bold; border-radius: 8px; margin-bottom: 15px; }
-        
-        .card { background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h3 { color: #003366; border-bottom: 2px solid #003366; padding-bottom: 5px; margin-top: 0; }
-        
-        .btn { display: block; width: 100%; padding: 15px; color: #fff; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-bottom: 10px; text-transform: uppercase; }
-        .btn-blue { background: #003366; }
-        .btn-orange { background: #d35400; }
-        .btn-green { background: #198754; font-size: 1.2em; padding: 20px; }
-        .btn-outline { background: transparent; color: #003366; border: 2px solid #003366; }
-        
-        .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-        .col { flex: 1; min-width: 120px; }
-        label { display: block; font-size: 0.8em; font-weight: bold; margin-bottom: 5px; color: #555; text-transform: uppercase; }
-        input[type="text"], input[type="number"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1em; background: #fafafa; }
-        
-        /* Sanfonas para organizar os formulários */
-        details { background: #f8f9fa; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 10px; }
-        summary { font-weight: bold; padding: 15px; cursor: pointer; color: #003366; user-select: none; }
-        details[open] summary { border-bottom: 1px solid #ccc; }
-        .details-body { padding: 15px; background: #fff; }
+        :root {
+            --navy:    #0a2342;
+            --blue:    #1a56db;
+            --blue-lt: #e8f0fe;
+            --orange:  #e05d1a;
+            --orange-lt:#fff3eb;
+            --green:   #0d7a3e;
+            --green-lt:#e6f7ee;
+            --red:     #c0392b;
+            --gray-50: #f8fafc;
+            --gray-100:#f1f5f9;
+            --gray-200:#e2e8f0;
+            --gray-400:#94a3b8;
+            --gray-600:#475569;
+            --gray-800:#1e293b;
+            --radius:  14px;
+            --shadow:  0 4px 20px rgba(10,35,66,.10);
+            --shadow-sm: 0 2px 8px rgba(10,35,66,.07);
+            /* superfícies — sobrescritas no modo escuro */
+            --bg:      #f1f5f9;
+            --surface: #ffffff;
+            --border:  #e2e8f0;
+            --text:    #1e293b;
+            --text-2:  #475569;
+            --text-3:  #94a3b8;
+        }
+        body.dark {
+            --bg:      #0f172a;
+            --surface: #1e293b;
+            --border:  #334155;
+            --text:    #f1f5f9;
+            --text-2:  #94a3b8;
+            --text-3:  #475569;
+            --gray-50: #1e293b;
+            --gray-100:#0f172a;
+            --gray-200:#334155;
+            --gray-400:#64748b;
+            --gray-600:#94a3b8;
+            --gray-800:#f1f5f9;
+            --blue-lt: #1e3a5f;
+            --orange-lt:#3d1a08;
+            --green-lt: #0c2e1e;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,.4);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background .3s, color .3s; }
 
-        /* Botões de Seleção Fáceis de Tocar */
-        .chip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 15px; }
-        .chip-grid label { background: #eee; border: 1px solid #ccc; padding: 10px 5px; border-radius: 6px; text-align: center; cursor: pointer; font-size: 0.85em; display: flex; flex-direction: column; justify-content: center; }
+        /* ── LAYOUT ─────────────────────────────────── */
+        #app-container { max-width: 600px; margin: 0 auto; padding: 0 0 60px; }
+
+        /* ── HEADER HERO ─────────────────────────────── */
+        .app-hero {
+            background: linear-gradient(135deg, var(--navy) 0%, #1a3a6b 60%, #1a56db 100%);
+            padding: 28px 20px 24px;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .app-hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+            border-radius: 20px; padding: 4px 12px; font-size: .72em; font-weight: 600;
+            letter-spacing: .5px; text-transform: uppercase; margin-bottom: 10px;
+        }
+        .hero-title { font-size: 1.45em; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
+        .hero-sub { font-size: .82em; opacity: .75; font-weight: 400; }
+        .hero-top { position: absolute; top: 16px; right: 16px; display: flex; align-items: center; gap: 8px; }
+        .hero-date { font-size: .7em; opacity: .65; text-align: right; }
+        .dark-toggle {
+            background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+            border-radius: 50%; width: 30px; height: 30px; font-size: 1em;
+            color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background .2s; flex-shrink: 0; padding: 0;
+        }
+        .dark-toggle:hover { background: rgba(255,255,255,.25); }
+
+        /* ── CARDS ───────────────────────────────────── */
+        .card { background: var(--surface); border-radius: var(--radius); padding: 20px; margin: 12px 12px 0; box-shadow: var(--shadow-sm); }
+        .card-title { font-size: .7em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+        .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── MENU BUTTONS (cards de documento) ──────── */
+        .doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .doc-btn {
+            display: flex; flex-direction: column; align-items: flex-start;
+            background: var(--gray-50); border: 1.5px solid var(--border);
+            border-radius: 12px; padding: 14px 14px 12px;
+            cursor: pointer; transition: all .18s; text-align: left; width: 100%;
+        }
+        .doc-btn:hover, .doc-btn:active { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--blue); }
+        .doc-btn .doc-icon { font-size: 1.6em; margin-bottom: 8px; }
+        .doc-btn .doc-label { font-size: .82em; font-weight: 700; color: var(--text); line-height: 1.3; }
+        .doc-btn .doc-desc { font-size: .7em; color: var(--text-3); margin-top: 3px; font-weight: 400; }
+        .doc-btn.blue  { border-color: #bfcfee; background: var(--blue-lt); }
+        .doc-btn.blue .doc-label { color: var(--navy); }
+        .doc-btn.orange { border-color: #f0c9a8; background: var(--orange-lt); }
+        .doc-btn.orange .doc-label { color: #7a2e06; }
+        .doc-btn.full  { grid-column: span 2; flex-direction: row; align-items: center; gap: 14px; padding: 14px 16px; }
+        .doc-btn.full .doc-icon { font-size: 1.4em; margin-bottom: 0; }
+        body.dark .doc-btn.blue .doc-label  { color: #93c5fd; }
+        body.dark .doc-btn.orange .doc-label { color: #fdba74; }
+
+        /* ── UTILITY BUTTONS ─────────────────────────── */
+        .util-row { display: flex; gap: 8px; }
+        .util-btn {
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+            padding: 12px 10px; border-radius: 10px; border: 1.5px solid var(--border);
+            background: var(--surface); font-size: .78em; font-weight: 600; color: var(--text-2);
+            cursor: pointer; transition: all .15s;
+        }
+        .util-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
+
+        /* ── FORMULÁRIO: TOPO ────────────────────────── */
+        .form-header {
+            background: linear-gradient(135deg, var(--navy), #1a4080);
+            color: #fff; padding: 16px 20px; margin-bottom: 0;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .form-back {
+            background: rgba(255,255,255,.15); border: none; border-radius: 8px;
+            color: #fff; padding: 8px 12px; font-size: .85em; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap;
+        }
+        .form-back:hover { background: rgba(255,255,255,.25); }
+        #form-titulo { font-size: 1em; font-weight: 700; flex: 1; }
+
+        /* ── BARRA DE AÇÕES ──────────────────────────── */
+        .form-actions {
+            display: flex; gap: 6px; padding: 10px 12px;
+            background: var(--gray-50); border-bottom: 1px solid var(--gray-200);
+        }
+        .act-btn {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+            padding: 9px 4px; border-radius: 10px; border: 1.5px solid var(--gray-200);
+            background: #fff; font-size: .68em; font-weight: 700; color: var(--gray-600);
+            cursor: pointer; transition: all .15s; text-transform: uppercase; letter-spacing: .3px;
+        }
+        .act-btn .act-icon { font-size: 1.4em; }
+        .act-btn.gps  { border-color: #a7f3d0; color: #065f46; background: #f0fdf4; }
+        .act-btn.save { border-color: #bfdbfe; color: #1e40af; background: #eff6ff; }
+        .act-btn.hist { border-color: #ddd6fe; color: #5b21b6; background: #f5f3ff; }
+
+        /* ── SEÇÕES DO FORMULÁRIO ────────────────────── */
+        .form-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        details { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+        details[open] { box-shadow: var(--shadow-sm); }
+        summary {
+            font-size: .82em; font-weight: 700; padding: 14px 16px;
+            cursor: pointer; color: var(--navy); user-select: none;
+            display: flex; align-items: center; gap: 8px; list-style: none;
+        }
+        body.dark summary { color: #93c5fd; }
+        summary::-webkit-details-marker { display: none; }
+        summary::before { content: '›'; font-size: 1.2em; transition: transform .2s; display: inline-block; }
+        details[open] summary::before { transform: rotate(90deg); }
+        details[open] summary { border-bottom: 1.5px solid var(--border); background: var(--gray-50); }
+        .details-body { padding: 16px; background: var(--surface); }
+
+        /* ── CAMPOS ──────────────────────────────────── */
+        .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+        .col { flex: 1; min-width: 100px; }
+        label { display: block; font-size: .72em; font-weight: 700; margin-bottom: 5px; color: var(--text-2); text-transform: uppercase; letter-spacing: .4px; }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%; padding: 11px 13px; border: 1.5px solid var(--border);
+            border-radius: 9px; font-size: .95em; background: var(--gray-50);
+            color: var(--text); font-family: inherit; transition: border-color .15s, background .15s;
+        }
+        input:focus, textarea:focus { outline: none; border-color: var(--blue); background: var(--surface); }
+        textarea { resize: vertical; }
+
+        /* Campo obrigatório vazio — borda vermelha pulsante */
+        input.campo-vazio { border-color: var(--red) !important; animation: shake .35s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+        label.req::after { content: ' *'; color: var(--red); font-weight: 900; }
+
+        /* ── CHIPS ───────────────────────────────────── */
+        .chip-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+        .chip-grid label {
+            background: var(--gray-50); border: 1.5px solid var(--border);
+            padding: 8px 13px; border-radius: 20px; text-align: center;
+            cursor: pointer; font-size: .8em; font-weight: 600; color: var(--text-2);
+            display: flex; flex-direction: column; align-items: center;
+            transition: all .15s; white-space: nowrap;
+        }
         .chip-grid input { display: none; }
-        .chip-grid label:has(input:checked) { background: #003366; color: #fff; border-color: #002244; font-weight: bold; }
-        .pts { font-size: 0.8em; opacity: 0.8; margin-top: 3px; }
+        .chip-grid label:has(input:checked) {
+            background: var(--navy); color: #fff; border-color: var(--navy);
+            box-shadow: 0 2px 8px rgba(10,35,66,.25);
+        }
+        .pts { font-size: .72em; opacity: .75; margin-top: 2px; }
 
-        .visor-pontos { background: #e8f5e9; border: 2px dashed #28a745; border-radius: 8px; padding: 15px; text-align: center; margin-top: 15px; color: #28a745; }
-        .visor-pontos h2 { margin: 0; font-size: 2.5em; }
+        /* ── VISOR BIC ───────────────────────────────── */
+        .visor-pontos {
+            background: linear-gradient(135deg, #064e3b, #0d7a3e);
+            border-radius: 12px; padding: 18px; text-align: center; margin-top: 12px; color: #fff;
+        }
+        .visor-pontos p { font-size: .75em; font-weight: 600; opacity: .8; text-transform: uppercase; letter-spacing: .5px; }
+        .visor-pontos h2 { font-size: 3em; font-weight: 800; margin: 4px 0; }
+        .visor-pontos #visor-padrao { font-size: .85em; font-weight: 700; opacity: 1; background: rgba(255,255,255,.2); border-radius: 6px; padding: 4px 10px; display: inline-block; margin-top: 6px; }
+
+        /* ── GPS BADGE ───────────────────────────────── */
+        #gps-badge { display:none; background: var(--green-lt); border: 1.5px solid #6ee7b7; border-radius: 10px; padding: 10px 14px; margin: 0 12px 0; font-size: .8em; color: #064e3b; align-items: center; gap: 8px; font-weight: 600; }
+        #gps-badge.hidden { display:none !important; }
+        #gps-badge:not(.hidden) { display: flex; }
+        body.dark #gps-badge { color: #6ee7b7; }
+        .gps-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; flex-shrink: 0; }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.3)} }
+
+        /* ── CÂMERA / FOTO ───────────────────────────── */
+        .foto-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+        .foto-btn {
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+            padding: 12px; border-radius: 10px; border: 1.5px dashed var(--border);
+            background: var(--gray-50); font-size: .82em; font-weight: 600; color: var(--text-2);
+            cursor: pointer; transition: all .15s;
+        }
+        .foto-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); border-style: solid; }
+        .foto-btn.camera { border-color: #a7f3d0; color: #065f46; background: var(--green-lt); border-style: solid; }
+        body.dark .foto-btn.camera { color: #6ee7b7; }
+
+        /* ── BOTÃO GERAR PDF ─────────────────────────── */
+        .btn-gerar {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; padding: 18px; margin: 4px 0 0;
+            background: linear-gradient(135deg, #0d7a3e, #15a854);
+            color: #fff; border: none; border-radius: 12px;
+            font-size: 1.05em; font-weight: 800; cursor: pointer;
+            box-shadow: 0 4px 16px rgba(13,122,62,.35); letter-spacing: .3px;
+            transition: all .15s;
+        }
+        .btn-gerar:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(13,122,62,.45); }
+        .btn-gerar:active { transform: translateY(0); }
+
+        /* ── TOAST ───────────────────────────────────── */
+        #toast {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%) translateY(90px);
+            background: var(--gray-800); color: #fff;
+            padding: 12px 22px; border-radius: 24px;
+            font-size: .85em; font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0,0,0,.25);
+            transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+            z-index: 9999; pointer-events: none; white-space: nowrap;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ── HISTÓRICO ───────────────────────────────── */
+        #historico-panel { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; display:flex; flex-direction:column; backdrop-filter:blur(3px); }
+        #historico-panel.hidden { display:none !important; }
+        #historico-inner { background: var(--bg); flex:1; overflow-y:auto; max-width:600px; margin:0 auto; width:100%; }
+        .hist-header { background: linear-gradient(135deg, var(--navy), #1a4080); color:#fff; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; }
+        .hist-header h3 { font-size:1em; font-weight:700; }
+        .hist-close { background:rgba(255,255,255,.2); border:none; color:#fff; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer; font-size:.85em; }
+        .hist-body { padding:12px; }
+        .hist-item { background:var(--surface); border-radius:12px; padding:14px 16px; margin-bottom:8px; box-shadow:var(--shadow-sm); display:flex; align-items:center; gap:12px; border: 1.5px solid var(--border); }
+        .hist-tipo-badge { background:var(--blue-lt); color:var(--navy); font-size:.65em; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:4px 9px; border-radius:6px; white-space:nowrap; }
+        body.dark .hist-tipo-badge { color:#93c5fd; }
+        .hist-item-info { flex:1; min-width:0; }
+        .hist-item-info strong { display:block; color:var(--text); font-size:.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .hist-item-info span { font-size:.73em; color:var(--text-3); display:block; margin-top:2px; }
+        .hist-btns { display:flex; gap:6px; flex-shrink:0; }
+        .hist-btns button { padding:8px 10px; border:none; border-radius:8px; font-size:.75em; font-weight:700; cursor:pointer; color:#fff; }
+        .btn-hist-abrir { background: var(--blue); }
+        .btn-hist-dup   { background: #0891b2; }
+        .btn-hist-del   { background: var(--red); }
+        .hist-vazio { text-align:center; color:var(--text-3); padding:50px 20px; font-size:.9em; }
+        .hist-vazio .hist-vazio-icon { font-size:3em; display:block; margin-bottom:10px; opacity:.4; }
+
+        /* ── STATS ───────────────────────────────────── */
+        .stats-row { display:flex; gap:8px; }
+        .stat-box { flex:1; background: var(--blue-lt); border:1.5px solid #bfcfee; border-radius:10px; padding:12px 10px; text-align:center; }
+        .stat-box .stat-n { font-size:1.6em; font-weight:800; color:var(--navy); display:block; line-height:1; }
+        body.dark .stat-box .stat-n { color:#93c5fd; }
+        .stat-box .stat-l { font-size:.68em; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:.4px; margin-top:3px; display:block; }
+
+        /* ── PREFERÊNCIAS ────────────────────────────── */
+        #prefs-panel { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1001; display:flex; align-items:flex-end; backdrop-filter:blur(3px); }
+        #prefs-panel.hidden { display:none !important; }
+        #prefs-inner { background:var(--surface); width:100%; max-width:600px; margin:0 auto; border-radius:20px 20px 0 0; padding:24px 20px 36px; }
+        #prefs-inner h3 { font-size:1em; font-weight:700; color:var(--navy); margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+        body.dark #prefs-inner h3 { color:#93c5fd; }
+        .prefs-save { width:100%; padding:14px; background:var(--navy); color:#fff; border:none; border-radius:10px; font-size:1em; font-weight:700; cursor:pointer; margin-top:16px; }
+
+        /* ── FISCAL CHIP ─────────────────────────────── */
+        .fiscal-chip { display:inline-flex; align-items:center; gap:6px; background:var(--blue-lt); border:1.5px solid #bfcfee; border-radius:20px; padding:5px 12px; font-size:.75em; font-weight:600; color:var(--navy); margin:6px 12px; cursor:pointer; }
+        body.dark .fiscal-chip { color:#93c5fd; }
+        .fiscal-chip:empty { display:none; }
+
+        /* ── DARK MODE TOGGLE ────────────────────────── */
+        /* dark-toggle movido para .hero-top acima */
 
         .hidden { display: none !important; }
 
-        /* =========================================================
-           A MÁGICA: O MOLDE DO PDF A4
-           ========================================================= */
+        /* ── PDF TEMPLATE (não muda) ─────────────────── */
         #pdf-template {
-            display: none;
-            width: 277mm;
-            background: #fff;
-            color: #000;
-            font-family: Arial, sans-serif;
-            font-size: 11px;
-            padding: 0;
-            margin: 0;
-            box-sizing: border-box;
+            display: none; width: 277mm; background: #fff; color: #000;
+            font-family: Arial, sans-serif; font-size: 11px; padding: 0; margin: 0; box-sizing: border-box;
         }
-        .pdf-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-        .pdf-title { text-align: center; font-weight: bold; font-size: 16px; text-decoration: underline; margin-bottom: 15px; text-transform: uppercase; }
-        
-        .pdf-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        .pdf-table th, .pdf-table td { border: 1px solid #000; padding: 7px; vertical-align: middle; }
-        .pdf-table th { background: #e9e9e9; text-align: left; font-size: 11px; }
-        .pdf-section { background: #d0d0d0; text-align: center; font-weight: bold; font-size: 13px; padding: 5px; border: 1px solid #000; border-bottom: none; }
+        .pdf-header { text-align:center; border-bottom:2px solid #000; padding-bottom:5px; margin-bottom:8px; font-size:10.5px; }
+        .pdf-title { text-align:center; font-weight:bold; font-size:14px; text-decoration:underline; margin-bottom:8px; text-transform:uppercase; }
+        .pdf-table { width:100%; border-collapse:collapse; margin-bottom:8px; }
+        .pdf-table th, .pdf-table td { border:1px solid #000; padding:5px 7px; vertical-align:middle; }
+        .pdf-table th { background:#e9e9e9; text-align:left; font-size:11px; }
+        .pdf-section { background:#d0d0d0; text-align:center; font-weight:bold; font-size:12px; padding:4px; border:1px solid #000; border-bottom:none; }
     </style>
 </head>
 <body>
 
     <!-- CONTAINER DO APLICATIVO -->
     <div id="app-container">
-        <header>SEMPLAN - Fiscalização Obras e Posturas</header>
+
+        <!-- HERO HEADER -->
+        <div class="app-hero">
+            <div class="hero-top">
+                <div class="hero-date" id="hero-date"></div>
+                <button class="dark-toggle" onclick="toggleDark()" id="dark-btn" title="Alternar modo escuro">🌙</button>
+            </div>
+            <div class="hero-badge">🏛️ Prefeitura de Cacoal · RO</div>
+            <div class="hero-title">SEMPLAN</div>
+            <div class="hero-sub">Sistema de Fiscalização de Obras e Posturas</div>
+        </div>
 
         <!-- PASSO 1: MENU -->
-        <div id="step-1" class="card">
-            <h3>Novo Documento</h3>
-            <button class="btn btn-blue" onclick="abrirFormulario('vazio')">Terreno Vazio</button>
-            <button class="btn btn-blue" onclick="abrirFormulario('construido')">Terreno Construído</button>
-            <button class="btn btn-blue" onclick="abrirFormulario('vistoria')">Relatório Vistoria Fiscal</button>
-            <button class="btn btn-orange" onclick="abrirFormulario('bic')">Boletim Cadastral (BIC)</button>
-            <button class="btn btn-orange" style="background:#b33c00;" onclick="abrirFormulario('termo')">Termo de Conclusão de Obra</button>
-        </div>
+        <div id="step-1">
+            <!-- Contador de vistorias -->
+            <div class="card">
+                <div class="card-title">📊 Resumo do Dia</div>
+                <div class="stats-row">
+                    <div class="stat-box"><span class="stat-n" id="stat-total">0</span><span class="stat-l">Total</span></div>
+                    <div class="stat-box"><span class="stat-n" id="stat-hoje">0</span><span class="stat-l">Hoje</span></div>
+                    <div class="stat-box"><span class="stat-n" id="stat-semana">0</span><span class="stat-l">Semana</span></div>
+                </div>
+            </div><!-- /card resumo -->
+
+            <div class="card">
+                <div class="card-title">📄 Novo Documento</div>
+                <div class="doc-grid">
+                    <button class="doc-btn blue" onclick="abrirFormulario('vazio')">
+                        <span class="doc-icon">🏚️</span>
+                        <span class="doc-label">Terreno Vazio</span>
+                        <span class="doc-desc">Imóvel sem edificação</span>
+                    </button>
+                    <button class="doc-btn blue" onclick="abrirFormulario('construido')">
+                        <span class="doc-icon">🏠</span>
+                        <span class="doc-label">Terreno Construído</span>
+                        <span class="doc-desc">Com edificação simples</span>
+                    </button>
+                    <button class="doc-btn blue full" onclick="abrirFormulario('vistoria')">
+                        <span class="doc-icon">🔍</span>
+                        <div>
+                            <span class="doc-label">Relatório de Vistoria Fiscal</span>
+                            <span class="doc-desc">Inspeção técnica detalhada com recuos e zoneamento</span>
+                        </div>
+                    </button>
+                    <button class="doc-btn orange" onclick="abrirFormulario('bic')">
+                        <span class="doc-icon">📋</span>
+                        <span class="doc-label">Boletim Cadastral (BIC)</span>
+                        <span class="doc-desc">Classificação construtiva</span>
+                    </button>
+                    <button class="doc-btn orange" onclick="abrirFormulario('termo')">
+                        <span class="doc-icon">✅</span>
+                        <span class="doc-label">Termo de Conclusão</span>
+                        <span class="doc-desc">Encerramento de obra</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⚡ Acesso Rápido</div>
+                <div class="util-row">
+                    <button class="util-btn" onclick="abrirHistorico()">📋 Histórico</button>
+                    <button class="util-btn" onclick="document.getElementById('import-input').click()">📂 Importar</button>
+                    <button class="util-btn" onclick="abrirPrefs()">⚙️ Fiscal</button>
+                </div>
+            </div>
+            <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importarRascunho(event)">
+        </div><!-- /step-1 -->
 
         <!-- PASSO 2: FORMULÁRIOS -->
         <div id="step-2" class="hidden">
-            <button class="btn btn-outline" onclick="voltar()">← Trocar Documento</button>
-            <h3 id="form-titulo" style="text-align: center;">Formulário</h3>
+            <!-- Cabeçalho do formulário -->
+            <div class="form-header">
+                <button class="form-back" onclick="voltar()">← Voltar</button>
+                <span id="form-titulo">Formulário</span>
+            </div>
+            <!-- Chip do fiscal logado -->
+            <div id="fiscal-chip" class="fiscal-chip" onclick="abrirPrefs()" title="Alterar fiscal"></div>
+
+            <!-- Badge GPS -->
+            <div id="gps-badge" class="hidden">
+                <div class="gps-dot"></div>
+                <span id="gps-texto">Capturando localização...</span>
+            </div>
+
+            <!-- Ações rápidas -->
+            <div class="form-actions">
+                <button class="act-btn gps"  onclick="capturarGPS()"><span class="act-icon">📍</span>GPS</button>
+                <button class="act-btn save" onclick="salvarRascunho()"><span class="act-icon">💾</span>Rascunho</button>
+                <button class="act-btn hist" onclick="salvarNoHistorico()"><span class="act-icon">📋</span>Histórico</button>
+            </div>
+
+            <div class="form-body">
 
             <!-- 1. IDENTIFICAÇÃO GERAL -->
             <details open>
@@ -105,16 +429,20 @@
                         <div class="col" id="div-zona"><label>Zona Fiscal</label><input type="text" id="zona"></div>
                     </div>
                     <div class="row">
-                        <div class="col"><label>Setor</label><input type="text" id="setor"></div>
-                        <div class="col"><label>Quadra</label><input type="text" id="quadra"></div>
-                        <div class="col"><label>Lote</label><input type="text" id="lote"></div>
+                        <div class="col"><label class="req">Setor</label><input type="text" id="setor"></div>
+                        <div class="col"><label class="req">Quadra</label><input type="text" id="quadra"></div>
+                        <div class="col"><label class="req">Lote</label><input type="text" id="lote"></div>
                         <div class="col" id="div-sublote"><label>Sub Lote</label><input type="text" id="sublote"></div>
                     </div>
-                    <label>Proprietário / Compromissário</label><input type="text" id="proprietario">
+                    <label class="req">Proprietário / Compromissário</label><input type="text" id="proprietario">
                     <label id="lbl-fantasia">Nome Fantasia / Posseiro</label><input type="text" id="fantasia">
                     <div class="row">
-                        <div class="col" style="flex:2"><label>Logradouro (Rua, Av)</label><input type="text" id="endereco"></div>
+                        <div class="col" style="flex:2"><label class="req">Logradouro (Rua, Av)</label><input type="text" id="endereco"></div>
                         <div class="col"><label>Bairro</label><input type="text" id="bairro"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label>Latitude (GPS)</label><input type="text" id="gps-lat" placeholder="—"></div>
+                        <div class="col"><label>Longitude (GPS)</label><input type="text" id="gps-lng" placeholder="—"></div>
                     </div>
                 </div>
             </details>
@@ -309,15 +637,28 @@
                     <label>Observações do Fiscal</label>
                     <textarea id="observacao" rows="3"></textarea>
                     
-                    <label style="margin-top:10px;">Fotos IN LOCO</label>
-                    <input type="file" id="foto-input" accept="image/*" multiple style="background:#fff;">
-                    <div id="foto-preview-grid" style="display:none; margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+                    <label style="margin-top:14px;">Fotos IN LOCO</label>
+                    <div class="foto-actions">
+                        <button type="button" class="foto-btn camera" onclick="document.getElementById('camera-input').click()">
+                            📷 Câmera
+                        </button>
+                        <button type="button" class="foto-btn" onclick="document.getElementById('foto-input').click()">
+                            🖼️ Galeria
+                        </button>
+                    </div>
+                    <input type="file" id="camera-input" accept="image/*" capture="environment" multiple style="display:none;">
+                    <input type="file" id="foto-input"   accept="image/*" multiple style="display:none;">
+                    <div id="foto-preview-grid" style="display:none; margin-top:6px; flex-wrap:wrap; gap:8px;"></div>
                 </div>
             </details>
 
-            <button class="btn btn-green" onclick="prepararGeracaoPDF()">GERAR PDF OFICIAL</button>
-        </div>
-    </div>
+            <button class="btn-gerar" onclick="prepararGeracaoPDF()">
+                📄 Gerar PDF Oficial
+            </button>
+            </div><!-- /form-body -->
+        </div><!-- /step-2 -->
+
+    </div><!-- /app-container -->
 
     <!-- =========================================================
          MOLDE DO PDF (Apenas aparece na hora de gerar)
@@ -335,10 +676,10 @@
         <!-- O CONTEÚDO ENTRA AQUI -->
         <div id="pdf-conteudo"></div>
         
-        <div style="margin-top: 50px; text-align: center;">
-            Cacoal, RO - <span id="pdf-data"></span><br><br><br>
+        <div style="margin-top: 18px; text-align: center;">
+            Cacoal, RO - <span id="pdf-data"></span><br><br>
             _________________________________________________________<br>
-            <b>Assinatura / Matrícula do Fiscal</b>
+            <b id="pdf-fiscal-nome">Assinatura / Matrícula do Fiscal</b>
         </div>
 
         <!-- FOTOS (geradas dinamicamente no JS) -->
@@ -348,14 +689,61 @@
         </div>
     </div>
 
+    <!-- PAINEL PREFERÊNCIAS -->
+    <div id="prefs-panel" class="hidden">
+        <div id="prefs-inner">
+            <h3>⚙️ Dados do Fiscal</h3>
+            <div style="margin-bottom:12px;">
+                <label>Nome Completo do Fiscal</label>
+                <input type="text" id="pref-nome" placeholder="Ex: João da Silva">
+            </div>
+            <div style="margin-bottom:12px;">
+                <label>Matrícula</label>
+                <input type="text" id="pref-matricula" placeholder="Ex: 12345-6">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+                <button class="prefs-save" onclick="salvarPrefs()">✅ Salvar Preferências</button>
+                <button style="padding:14px 18px;background:var(--red);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:.9em;white-space:nowrap;" onclick="fecharPrefs()">Cancelar</button>
+            </div>
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200);">
+                <button style="width:100%;padding:12px;background:var(--red);color:#fff;border:none;border-radius:10px;font-size:.85em;font-weight:700;cursor:pointer;" onclick="limparHistoricoCompleto()">🗑️ Limpar Todo o Histórico</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAINEL HISTÓRICO -->
+    <div id="historico-panel" class="hidden">
+        <div id="historico-inner">
+            <div class="hist-header">
+                <h3>📋 Histórico de Vistorias</h3>
+                <button class="hist-close" onclick="fecharHistorico()">✕ Fechar</button>
+            </div>
+            <div class="hist-body">
+                <div id="historico-lista"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast"></div>
+
     <!-- SCRIPTS MESTRES -->
     <script>
         let docAtual = "";
         let base64Fotos = [];
         let calcBic = { total: 0, padrao: "N/A" };
+        let historicIdAtivo = null;   // ID do registro do histórico atualmente aberto (null = novo)
+        let restaurando = false;       // Flag: impede salvamento automático durante restauração
 
         // CONTROLA TELAS E CAMPOS
         function abrirFormulario(tipo) {
+            // Se já tem dados abertos E não é uma restauração, salva no histórico antes de trocar
+            if (!restaurando && docAtual && temDadosPreenchidos()) {
+                _salvarOuAtualizar();
+                toast('📋 Lançamento anterior salvo no histórico');
+            }
+            limparFormulario();
+            if (!restaurando) historicIdAtivo = null; // novo lançamento limpo
             docAtual = tipo;
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
@@ -380,42 +768,107 @@
                 ['div-processo', 'div-inscricao', 'div-zona', 'div-sublote', 'bloco-bic'].forEach(id => document.getElementById(id).classList.remove('hidden'));
             }
         }
-        function voltar() {
-            document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('step-1').classList.remove('hidden');
+        function temDadosPreenchidos() {
+            // Verifica se há algum campo de texto relevante preenchido
+            const campos = ['proprietario','setor','quadra','lote','endereco'];
+            return campos.some(id => {
+                const el = document.getElementById(id);
+                return el && el.value.trim() !== '';
+            });
         }
 
-        // CARREGA IMAGENS EM BASE64 (múltiplas)
-        document.getElementById('foto-input').addEventListener('change', function(e) {
+        function limparFormulario() {
+            // Limpa todos os campos de texto e número
+            ['processo','inscricao','zona','setor','quadra','lote','sublote',
+             'proprietario','fantasia','endereco','bairro','gps-lat','gps-lng',
+             'area_simples','zoneamento','testadas','comodos','bic_m2','observacao']
+            .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+            // Restaura defaults numéricos
+            const t = document.getElementById('testadas'); if(t) t.value = '1';
+            const c = document.getElementById('comodos');  if(c) c.value = '4';
+            // Desmarca todos os radios e checkboxes
+            document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(el => el.checked = false);
+            // Limpa fotos
             base64Fotos = [];
+            renderFotoGrid();
+            document.getElementById('foto-input').value = '';
+            document.getElementById('camera-input').value = '';
+            // Reseta BIC
+            calcBic = { total: 0, padrao: 'N/A' };
+            document.getElementById('visor-pts').innerText = '0';
+            document.getElementById('visor-padrao').innerText = 'PADRÃO: ---';
+            // Esconde badge GPS
+            document.getElementById('gps-badge').classList.add('hidden');
+        }
+
+        function voltar() {
+            if (!restaurando && temDadosPreenchidos()) {
+                _salvarOuAtualizar();
+                toast('📋 Salvo no histórico automaticamente');
+            }
+            limparFormulario();
+            historicIdAtivo = null;
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-1').classList.remove('hidden');
+            atualizarContadores();
+        }
+
+        // CARREGA IMAGENS EM BASE64 (múltiplas) — galeria e câmera
+        function processarFotos(files) {
             const grid = document.getElementById('foto-preview-grid');
-            grid.innerHTML = '';
-            grid.style.display = 'none';
-            const files = Array.from(e.target.files);
+            const startIdx = base64Fotos.length; // acumula, não substitui
             if (!files.length) return;
             let carregadas = 0;
-            files.forEach((file, idx) => {
+            Array.from(files).forEach((file, i) => {
+                const idx = startIdx + i;
                 const reader = new FileReader();
                 reader.onload = function(evt) {
                     base64Fotos[idx] = evt.target.result;
-                    // Thumbnail
                     const wrap = document.createElement('div');
                     wrap.style.cssText = 'position:relative; width:calc(33% - 6px);';
                     const img = document.createElement('img');
                     img.src = evt.target.result;
-                    img.style.cssText = 'width:100%; height:80px; object-fit:cover; border-radius:6px; border:1px solid #ccc;';
+                    img.style.cssText = 'width:100%; height:80px; object-fit:cover; border-radius:8px; border:1.5px solid var(--border);';
                     const badge = document.createElement('span');
                     badge.innerText = idx + 1;
-                    badge.style.cssText = 'position:absolute; top:4px; left:4px; background:#003366; color:#fff; font-size:0.7em; font-weight:bold; padding:2px 6px; border-radius:4px;';
-                    wrap.appendChild(img);
-                    wrap.appendChild(badge);
+                    badge.style.cssText = 'position:absolute; top:4px; left:4px; background:var(--navy); color:#fff; font-size:.7em; font-weight:bold; padding:2px 6px; border-radius:4px;';
+                    const del = document.createElement('button');
+                    del.innerText = '✕';
+                    del.style.cssText = 'position:absolute; top:4px; right:4px; background:var(--red); color:#fff; border:none; border-radius:4px; width:20px; height:20px; font-size:.7em; cursor:pointer; display:flex; align-items:center; justify-content:center;';
+                    del.onclick = () => { base64Fotos.splice(idx,1); renderFotoGrid(); };
+                    wrap.appendChild(img); wrap.appendChild(badge); wrap.appendChild(del);
                     grid.appendChild(wrap);
                     carregadas++;
                     if (carregadas === files.length) grid.style.display = 'flex';
                 };
                 reader.readAsDataURL(file);
             });
-        });
+        }
+
+        function renderFotoGrid() {
+            const grid = document.getElementById('foto-preview-grid');
+            grid.innerHTML = '';
+            base64Fotos.forEach((src, idx) => {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'position:relative; width:calc(33% - 6px);';
+                const img = document.createElement('img');
+                img.src = src;
+                img.style.cssText = 'width:100%; height:80px; object-fit:cover; border-radius:8px; border:1.5px solid var(--border);';
+                const badge = document.createElement('span');
+                badge.innerText = idx + 1;
+                badge.style.cssText = 'position:absolute; top:4px; left:4px; background:var(--navy); color:#fff; font-size:.7em; font-weight:bold; padding:2px 6px; border-radius:4px;';
+                const del = document.createElement('button');
+                del.innerText = '✕';
+                del.style.cssText = 'position:absolute; top:4px; right:4px; background:var(--red); color:#fff; border:none; border-radius:4px; width:20px; height:20px; font-size:.7em; cursor:pointer;';
+                del.onclick = () => { base64Fotos.splice(idx,1); renderFotoGrid(); };
+                wrap.appendChild(img); wrap.appendChild(badge); wrap.appendChild(del);
+                grid.appendChild(wrap);
+            });
+            grid.style.display = base64Fotos.length ? 'flex' : 'none';
+        }
+
+        document.getElementById('foto-input').addEventListener('change', e => { processarFotos(e.target.files); e.target.value=''; });
+        document.getElementById('camera-input').addEventListener('change', e => { processarFotos(e.target.files); e.target.value=''; });
 
         // CÁLCULO DO BIC
         document.querySelectorAll('.calc-bic input').forEach(el => el.addEventListener('change', somarBIC));
@@ -443,7 +896,387 @@
             calcBic = { total: total, padrao: p.toUpperCase() };
         }
 
-        // FUNÇÕES EXTRATORAS
+        // =========================================================
+        // DUPLICAR VISTORIA
+        // =========================================================
+        function duplicarDoHistorico(id) {
+            const hist = JSON.parse(localStorage.getItem('semplan_historico') || '[]');
+            const entrada = hist.find(h => h.id === id);
+            if (!entrada) return;
+            // Cria cópia profunda com novo ID
+            const copia = JSON.parse(JSON.stringify(entrada));
+            copia.id = Date.now();
+            copia.data = new Date().toLocaleString('pt-BR');
+            copia.proprietario += ' (cópia)';
+            copia.state.campos.proprietario = (copia.state.campos.proprietario || '') + ' (cópia)';
+            hist.unshift(copia);
+            if (hist.length > 50) hist.splice(50);
+            localStorage.setItem('semplan_historico', JSON.stringify(hist));
+            abrirHistorico();
+            atualizarContadores();
+            toast('⧉ Vistoria duplicada!');
+        }
+
+        // =========================================================
+        // VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS
+        // =========================================================
+        function validarCamposObrigatorios() {
+            const obrigatorios = ['setor', 'quadra', 'lote', 'proprietario', 'endereco'];
+            let ok = true;
+            obrigatorios.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (!el.value.trim()) {
+                    el.classList.add('campo-vazio');
+                    el.addEventListener('input', () => el.classList.remove('campo-vazio'), { once: true });
+                    ok = false;
+                }
+            });
+            if (!ok) {
+                toast('⚠️ Preencha os campos obrigatórios (*)');
+                // Abre a seção de identificação se estiver fechada
+                const det = document.querySelector('details');
+                if (det && !det.open) det.open = true;
+                document.getElementById('setor').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return ok;
+        }
+
+        // =========================================================
+        // MODO ESCURO
+        // =========================================================
+        function toggleDark() {
+            const dark = document.body.classList.toggle('dark');
+            localStorage.setItem('semplan_dark', dark ? '1' : '0');
+            document.getElementById('dark-btn').textContent = dark ? '☀️' : '🌙';
+        }
+        function aplicarDark() {
+            if (localStorage.getItem('semplan_dark') === '1') {
+                document.body.classList.add('dark');
+                document.getElementById('dark-btn').textContent = '☀️';
+            }
+        }
+
+        // Data no hero + init
+        document.getElementById('hero-date').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+        atualizarContadores();
+        aplicarPrefs();
+        aplicarDark();
+
+        // =========================================================
+        // TOAST
+        // =========================================================
+        function toast(msg, dur=2500) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), dur);
+        }
+
+        // =========================================================
+        // GPS
+        // =========================================================
+        function capturarGPS() {
+            if (!navigator.geolocation) { toast('⚠️ GPS não disponível neste dispositivo'); return; }
+            const badge  = document.getElementById('gps-badge');
+            const texto  = document.getElementById('gps-texto');
+            badge.classList.remove('hidden');
+            texto.innerText = '📡 Aguardando sinal GPS...';
+
+            let melhor = null;        // melhor leitura até agora
+            let tentativas = 0;
+            const MAX_TENTATIVAS = 6; // tenta até 6 leituras (~18s)
+            let watchId = null;
+
+            function aplicarMelhor() {
+                if (!melhor) return;
+                const lat = melhor.latitude.toFixed(6);
+                const lng = melhor.longitude.toFixed(6);
+                const acc = Math.round(melhor.accuracy);
+                document.getElementById('gps-lat').value = lat;
+                document.getElementById('gps-lng').value = lng;
+                texto.innerText = `📍 Lat: ${lat} | Long: ${lng}  ·  ±${acc}m`;
+                toast(acc <= 15 ? '✅ GPS preciso capturado!' : `📍 GPS capturado (±${acc}m)`);
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                pos => {
+                    tentativas++;
+                    // Guarda se for a primeira ou se for mais precisa
+                    if (!melhor || pos.coords.accuracy < melhor.accuracy) {
+                        melhor = pos.coords;
+                        const acc = Math.round(melhor.accuracy);
+                        texto.innerText = `📡 Refinando... ±${acc}m (${tentativas}/${MAX_TENTATIVAS})`;
+                    }
+                    // Para quando atingir precisão boa o suficiente ou esgotar tentativas
+                    if (melhor.accuracy <= 10 || tentativas >= MAX_TENTATIVAS) {
+                        navigator.geolocation.clearWatch(watchId);
+                        aplicarMelhor();
+                    }
+                },
+                err => {
+                    navigator.geolocation.clearWatch(watchId);
+                    // Se já teve alguma leitura, usa a melhor disponível
+                    if (melhor) {
+                        aplicarMelhor();
+                        return;
+                    }
+                    badge.classList.add('hidden');
+                    const msgs = { 1:'Permissão negada. Libere o GPS.', 2:'Sinal GPS indisponível.', 3:'Tempo esgotado.' };
+                    toast('⚠️ ' + (msgs[err.code] || 'Erro ao obter GPS'));
+                },
+                { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+            );
+
+            // Segurança: encerra após 25s no máximo
+            setTimeout(() => {
+                navigator.geolocation.clearWatch(watchId);
+                if (melhor) aplicarMelhor();
+            }, 25000);
+        }
+
+        // =========================================================
+        // COLETAR / RESTAURAR ESTADO DO FORMULÁRIO
+        // =========================================================
+        function coletarEstado() {
+            const campos = ['processo','inscricao','zona','setor','quadra','lote','sublote',
+                'proprietario','fantasia','endereco','bairro','gps-lat','gps-lng',
+                'area_simples','zoneamento','testadas','comodos','bic_m2','observacao'];
+            const state = { docAtual, campos: {}, radios: {}, checks: {}, fotos: base64Fotos };
+            campos.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) state.campos[id] = el.value;
+            });
+            // Radios
+            document.querySelectorAll('input[type=radio]:checked').forEach(el => {
+                state.radios[el.name] = el.value;
+            });
+            // Checkboxes
+            const chkNames = [...new Set([...document.querySelectorAll('input[type=checkbox]')].map(e => e.name))];
+            chkNames.forEach(name => {
+                state.checks[name] = [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value);
+            });
+            return state;
+        }
+
+        function restaurarEstado(state) {
+            abrirFormulario(state.docAtual);
+            // Campos texto
+            Object.entries(state.campos || {}).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+            });
+            // Radios
+            Object.entries(state.radios || {}).forEach(([name, val]) => {
+                const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
+                if (el) { el.checked = true; el.dispatchEvent(new Event('change')); }
+            });
+            // Checkboxes
+            Object.entries(state.checks || {}).forEach(([name, vals]) => {
+                vals.forEach(v => {
+                    const el = document.querySelector(`input[name="${name}"][value="${v}"]`);
+                    if (el) el.checked = true;
+                });
+            });
+            // Fotos
+            base64Fotos = state.fotos || [];
+            renderFotoGrid();
+            // GPS badge
+            const lat = state.campos?.['gps-lat'], lng = state.campos?.['gps-lng'];
+            if (lat && lng) {
+                const badge = document.getElementById('gps-badge');
+                badge.classList.remove('hidden');
+                document.getElementById('gps-texto').innerText = `📍 Lat: ${lat} | Long: ${lng}`;
+            }
+            somarBIC();
+        }
+
+        // =========================================================
+        // SALVAR / IMPORTAR RASCUNHO (.json)
+        // =========================================================
+        function salvarRascunho() {
+            const state = coletarEstado();
+            const json = JSON.stringify(state, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            const prop = state.campos?.proprietario || 'sem_nome';
+            const lote = state.campos?.lote || '0';
+            a.download = `Rascunho_${state.docAtual}_${prop}_Lote${lote}.json`.replace(/\s+/g,'_');
+            a.click();
+            toast('💾 Rascunho salvo!');
+        }
+
+        function importarRascunho(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const state = JSON.parse(e.target.result);
+                    restaurando = true;
+                    historicIdAtivo = null; // rascunho importado = novo registro
+                    restaurarEstado(state);
+                    restaurando = false;
+                    toast('📂 Rascunho carregado!');
+                } catch { restaurando = false; toast('⚠️ Arquivo inválido'); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // =========================================================
+        // HISTÓRICO (localStorage) — com sobrescrita anti-duplicação
+        // =========================================================
+
+        // Salva novo OU atualiza entrada existente (se veio do histórico)
+        function _salvarOuAtualizar() {
+            const state = coletarEstado();
+            const hist = JSON.parse(localStorage.getItem('semplan_historico') || '[]');
+            const entrada = {
+                id: historicIdAtivo || Date.now(),
+                tipo: state.docAtual,
+                proprietario: state.campos?.proprietario || '—',
+                lote: state.campos?.lote || '—',
+                endereco: state.campos?.endereco || '—',
+                data: new Date().toLocaleString('pt-BR'),
+                state
+            };
+            const idx = hist.findIndex(h => h.id === entrada.id);
+            if (idx >= 0) {
+                hist[idx] = entrada; // sobrescreve
+            } else {
+                hist.unshift(entrada); // novo
+                if (hist.length > 50) hist.splice(50);
+            }
+            historicIdAtivo = entrada.id; // aponta para este registro
+            localStorage.setItem('semplan_historico', JSON.stringify(hist));
+        }
+
+        function salvarNoHistorico() {
+            _salvarOuAtualizar();
+            atualizarContadores();
+            toast('📋 Salvo no histórico!');
+        }
+
+        function abrirHistorico() {
+            const hist = JSON.parse(localStorage.getItem('semplan_historico') || '[]');
+            const lista = document.getElementById('historico-lista');
+            const tipoLabel = { vazio:'Terreno Vazio', construido:'Terreno Construído', vistoria:'Vistoria Fiscal', bic:'BIC', termo:'Termo Conclusão' };
+            if (hist.length === 0) {
+                lista.innerHTML = `<div class="hist-vazio"><span class="hist-vazio-icon">📭</span>Nenhuma vistoria salva ainda.<br>Preencha um formulário e clique em "📋 Histórico".</div>`;
+            } else {
+                lista.innerHTML = hist.map(h => `
+                    <div class="hist-item" style="${h.id === historicIdAtivo ? 'border-color:var(--blue);background:var(--blue-lt);' : ''}">
+                        <div><span class="hist-tipo-badge">${tipoLabel[h.tipo] || h.tipo}</span></div>
+                        <div class="hist-item-info">
+                            <strong>${h.proprietario}${h.id === historicIdAtivo ? ' ✏️' : ''}</strong>
+                            <span>Lote ${h.lote} · ${h.endereco}</span>
+                            <span>${h.data}</span>
+                        </div>
+                        <div class="hist-btns">
+                            <button class="btn-hist-abrir" onclick="carregarDoHistorico(${h.id})">Abrir</button>
+                            <button class="btn-hist-dup"   onclick="duplicarDoHistorico(${h.id})" title="Duplicar">⧉</button>
+                            <button class="btn-hist-del"   onclick="deletarDoHistorico(${h.id})">✕</button>
+                        </div>
+                    </div>`).join('');
+            }
+            document.getElementById('historico-panel').classList.remove('hidden');
+        }
+
+        function fecharHistorico() {
+            document.getElementById('historico-panel').classList.add('hidden');
+        }
+
+        function carregarDoHistorico(id) {
+            restaurando = true;          // ativa flag: bloca salvamento automático
+            historicIdAtivo = id;        // aponta para este registro
+            const hist = JSON.parse(localStorage.getItem('semplan_historico') || '[]');
+            const entrada = hist.find(h => h.id === id);
+            if (!entrada) { restaurando = false; return; }
+            restaurarEstado(entrada.state);
+            fecharHistorico();
+            restaurando = false;         // desativa flag após restaurar
+            toast('✅ Vistoria carregada — edições serão salvas no mesmo registro');
+        }
+
+        function deletarDoHistorico(id) {
+            if (!confirm('Remover esta vistoria do histórico?')) return;
+            let hist = JSON.parse(localStorage.getItem('semplan_historico') || '[]');
+            hist = hist.filter(h => h.id !== id);
+            localStorage.setItem('semplan_historico', JSON.stringify(hist));
+            if (historicIdAtivo === id) historicIdAtivo = null;
+            abrirHistorico();
+            atualizarContadores();
+            toast('🗑️ Removido do histórico');
+        }
+
+        function limparHistoricoCompleto() {
+            if (!confirm('Apagar TODO o histórico de vistorias? Esta ação não pode ser desfeita.')) return;
+            localStorage.removeItem('semplan_historico');
+            historicIdAtivo = null;
+            fecharPrefs();
+            atualizarContadores();
+            toast('🗑️ Histórico apagado');
+        }
+
+        // =========================================================
+        // CONTADORES
+        // =========================================================
+        function atualizarContadores() {
+            const hist = JSON.parse(localStorage.getItem('semplan_historico') || '[]');
+            const agora = new Date();
+            const hoje = agora.toLocaleDateString('pt-BR');
+            const semanaAtras = new Date(agora - 7 * 864e5);
+            const cHoje   = hist.filter(h => h.data.startsWith(hoje)).length;
+            const cSemana = hist.filter(h => {
+                const d = h.data.split('/');
+                if (d.length < 3) return false;
+                const dt = new Date(`${d[2].substring(0,4)}-${d[1]}-${d[0]}`);
+                return dt >= semanaAtras;
+            }).length;
+            document.getElementById('stat-total').innerText  = hist.length;
+            document.getElementById('stat-hoje').innerText   = cHoje;
+            document.getElementById('stat-semana').innerText = cSemana;
+        }
+
+        // =========================================================
+        // PREFERÊNCIAS DO FISCAL
+        // =========================================================
+        function abrirPrefs() {
+            const prefs = JSON.parse(localStorage.getItem('semplan_prefs') || '{}');
+            document.getElementById('pref-nome').value      = prefs.nome || '';
+            document.getElementById('pref-matricula').value = prefs.matricula || '';
+            document.getElementById('prefs-panel').classList.remove('hidden');
+        }
+
+        function fecharPrefs() {
+            document.getElementById('prefs-panel').classList.add('hidden');
+        }
+
+        function salvarPrefs() {
+            const prefs = {
+                nome:      document.getElementById('pref-nome').value.trim(),
+                matricula: document.getElementById('pref-matricula').value.trim()
+            };
+            localStorage.setItem('semplan_prefs', JSON.stringify(prefs));
+            aplicarPrefs();
+            fecharPrefs();
+            toast('✅ Preferências salvas!');
+        }
+
+        function aplicarPrefs() {
+            const prefs = JSON.parse(localStorage.getItem('semplan_prefs') || '{}');
+            const chip = document.getElementById('fiscal-chip');
+            if (prefs.nome) {
+                chip.innerHTML = `👤 ${prefs.nome}${prefs.matricula ? ' · Mat. ' + prefs.matricula : ''}`;
+                chip.style.display = 'inline-flex';
+            } else {
+                chip.style.display = 'none';
+            }
+        }
+
+
         function val(id) { return document.getElementById(id).value.trim() || ""; }
         function rad(name) { let r = document.querySelector(`input[name="${name}"]:checked`); return r ? r.value : "---"; }
         function chks(name) {
@@ -461,6 +1294,7 @@
         // ESTRUTURADOR DO PDF E RESOLUÇÃO DO BUG DO PDF BRANCO
         // ==============================================================
         function prepararGeracaoPDF() {
+            if (!validarCamposObrigatorios()) return;
             let html = "";
 
             // BLOCO: IDENTIFICAÇÃO (Comum a todos)
@@ -476,6 +1310,10 @@
                 </tr>`;
             if(docAtual === 'vistoria' || docAtual === 'bic') {
                 html += `<tr><td colspan="2"><b>Inscrição Cadastral:</b> ${val('inscricao')}</td><td colspan="2"><b>Processo:</b> ${val('processo')}</td></tr>`;
+            }
+            const lat = val('gps-lat'), lng = val('gps-lng');
+            if(lat && lng) {
+                html += `<tr><td colspan="4">📍 <b>Coordenadas GPS:</b> Lat ${lat} | Long ${lng} &nbsp;&nbsp; <a href="https://maps.google.com/?q=${lat},${lng}" style="color:#003366;">Ver no Mapa</a></td></tr>`;
             }
             html += `</table>`;
 
@@ -546,6 +1384,10 @@
             // INJETA TUDO
             document.getElementById('pdf-conteudo').innerHTML = html;
             document.getElementById('pdf-data').innerText = new Date().toLocaleDateString('pt-BR');
+            // Nome do fiscal nas preferências
+            const prefs = JSON.parse(localStorage.getItem('semplan_prefs') || '{}');
+            const nomeFiscal = [prefs.nome, prefs.matricula ? 'Mat. ' + prefs.matricula : ''].filter(Boolean).join(' · ');
+            document.getElementById('pdf-fiscal-nome').innerText = nomeFiscal || 'Assinatura / Matrícula do Fiscal';
             
             if(base64Fotos.length) {
                 document.getElementById('pdf-foto-wrap').style.display = 'block';
