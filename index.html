@@ -1434,25 +1434,47 @@
                 }
             }
 
+            let _gerando = true; // flag global para o safety net
+
             function restaurar() {
+                _gerando = false;
                 pdfTemplate.style.display = 'none';
                 pdfTemplate.style.position = '';
                 pdfTemplate.style.top = '';
                 pdfTemplate.style.left = '';
                 pdfTemplate.style.zIndex = '';
                 document.getElementById('pdf-foto-wrap').style.display = 'none';
+                // Restaura a UI — usa os dois para garantir
                 app.style.visibility = 'visible';
+                app.style.pointerEvents = '';
+                app.style.opacity = '';
             }
 
-            setTimeout(() => {
-                const larguraPx = pdfTemplate.offsetWidth;
+            // Safety net: se o usuário sair e voltar (PDF viewer no celular),
+            // e a UI ainda estiver oculta, restaura automaticamente.
+            function onVisibilityChange() {
+                if (!document.hidden && _gerando) {
+                    restaurar();
+                    document.removeEventListener('visibilitychange', onVisibilityChange);
+                    toast('✅ PDF gerado!');
+                }
+            }
+            document.addEventListener('visibilitychange', onVisibilityChange);
 
-                // PASSO 1: captura o conteúdo principal (sem a foto)
-                html2canvas(pdfTemplate, {
-                    scale: 2, useCORS: true, allowTaint: true,
-                    scrollX: 0, scrollY: -window.scrollY,
-                    width: larguraPx, windowWidth: larguraPx
-                }).then(canvasConteudo => {
+            // Oculta a UI de forma mais segura (pointer-events previne cliques acidentais)
+            app.style.visibility = 'hidden';
+            app.style.pointerEvents = 'none';
+
+            setTimeout(async () => {
+                try {
+                    const larguraPx = pdfTemplate.offsetWidth;
+
+                    // PASSO 1: captura o conteúdo principal (sem a foto)
+                    const canvasConteudo = await html2canvas(pdfTemplate, {
+                        scale: 2, useCORS: true, allowTaint: true,
+                        scrollX: 0, scrollY: -window.scrollY,
+                        width: larguraPx, windowWidth: larguraPx
+                    });
                     canvasParaPdf(canvasConteudo, pdf, true);
 
                     // PASSO 2: cada foto em página separada
@@ -1460,36 +1482,32 @@
                         const fotoWrap = document.getElementById('pdf-foto-wrap');
                         const fotoConteudo = document.getElementById('pdf-foto-conteudo');
 
-                        function gerarFoto(idx) {
-                            if (idx >= base64Fotos.length) {
-                                pdf.save(nomeArquivo);
-                                restaurar();
-                                return;
-                            }
-                            // Monta o conteúdo da página desta foto
+                        for (let idx = 0; idx < base64Fotos.length; idx++) {
                             fotoConteudo.innerHTML = `
                                 <p style="font-size:10px; color:#555; margin-bottom:8px;">Foto ${idx + 1} de ${base64Fotos.length}</p>
                                 <img src="${base64Fotos[idx]}" style="max-width:100%; max-height:550px; border:1px solid #000;">
                             `;
                             fotoWrap.style.display = 'block';
-                            setTimeout(() => {
-                                html2canvas(fotoWrap, {
-                                    scale: 2, useCORS: true, allowTaint: true,
-                                    scrollX: 0, scrollY: -window.scrollY,
-                                    width: larguraPx, windowWidth: larguraPx
-                                }).then(canvasFoto => {
-                                    canvasParaPdf(canvasFoto, pdf, false);
-                                    fotoWrap.style.display = 'none';
-                                    gerarFoto(idx + 1);
-                                });
-                            }, 200);
+                            await new Promise(r => setTimeout(r, 200));
+                            const canvasFoto = await html2canvas(fotoWrap, {
+                                scale: 2, useCORS: true, allowTaint: true,
+                                scrollX: 0, scrollY: -window.scrollY,
+                                width: larguraPx, windowWidth: larguraPx
+                            });
+                            canvasParaPdf(canvasFoto, pdf, false);
+                            fotoWrap.style.display = 'none';
                         }
-                        gerarFoto(0);
-                    } else {
-                        pdf.save(nomeArquivo);
-                        restaurar();
                     }
-                });
+
+                    pdf.save(nomeArquivo);
+                } catch (err) {
+                    console.error('Erro ao gerar PDF:', err);
+                    toast('⚠️ Erro ao gerar PDF. Tente novamente.');
+                } finally {
+                    // SEMPRE restaura a UI, mesmo em caso de erro
+                    document.removeEventListener('visibilitychange', onVisibilityChange);
+                    restaurar();
+                }
             }, 600);
         }
     </script>
