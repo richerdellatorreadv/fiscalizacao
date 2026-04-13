@@ -1434,32 +1434,39 @@
                 }
             }
 
-            let _gerando = true; // flag global para o safety net
+            let _restaurado = false; // garante que restaurar() roda só uma vez
 
             function restaurar() {
-                _gerando = false;
+                if (_restaurado) return;
+                _restaurado = true;
                 pdfTemplate.style.display = 'none';
                 pdfTemplate.style.position = '';
                 pdfTemplate.style.top = '';
                 pdfTemplate.style.left = '';
                 pdfTemplate.style.zIndex = '';
                 document.getElementById('pdf-foto-wrap').style.display = 'none';
-                // Restaura a UI — usa os dois para garantir
                 app.style.visibility = 'visible';
                 app.style.pointerEvents = '';
                 app.style.opacity = '';
+                // Remove todos os listeners de retorno
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+                window.removeEventListener('pageshow', onPageShow);
+                if (_safetyTimer) clearTimeout(_safetyTimer);
             }
 
-            // Safety net: se o usuário sair e voltar (PDF viewer no celular),
-            // e a UI ainda estiver oculta, restaura automaticamente.
+            // Safety net 1: visibilitychange — quando o usuário esconde e revela a aba
             function onVisibilityChange() {
-                if (!document.hidden && _gerando) {
-                    restaurar();
-                    document.removeEventListener('visibilitychange', onVisibilityChange);
-                    toast('✅ PDF gerado!');
-                }
+                if (!document.hidden) restaurar();
             }
+            // Safety net 2: pageshow — dispara ao voltar via botão "Voltar" do celular / histórico do browser
+            function onPageShow() {
+                restaurar();
+            }
+            // Safety net 3: timeout máximo de 30s — evita UI travada para sempre
+            let _safetyTimer = setTimeout(() => restaurar(), 30000);
+
             document.addEventListener('visibilitychange', onVisibilityChange);
+            window.addEventListener('pageshow', onPageShow);
 
             // Oculta a UI de forma mais segura (pointer-events previne cliques acidentais)
             app.style.visibility = 'hidden';
@@ -1505,8 +1512,8 @@
                     toast('⚠️ Erro ao gerar PDF. Tente novamente.');
                 } finally {
                     // SEMPRE restaura a UI, mesmo em caso de erro
-                    document.removeEventListener('visibilitychange', onVisibilityChange);
-                    restaurar();
+                    // Pequeno delay para o celular ter tempo de abrir o PDF antes de restaurar
+                    setTimeout(() => restaurar(), 800);
                 }
             }, 600);
         }
