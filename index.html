@@ -8,6 +8,7 @@
     <!-- Bibliotecas para geração de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -718,6 +719,13 @@
                 <h3>📋 Histórico de Vistorias</h3>
                 <button class="hist-close" onclick="fecharHistorico()">✕ Fechar</button>
             </div>
+            <div style="padding:10px 12px; background:var(--bg); border-bottom:1px solid var(--border); display:flex; gap:8px; flex-wrap:wrap;">
+                <input type="text" id="hist-busca" placeholder="🔍 Buscar proprietário, lote, endereço..." oninput="renderHistorico()" style="flex:1; min-width:180px; padding:9px 12px; font-size:.82em; border-radius:9px; border:1.5px solid var(--border); background:var(--surface); color:var(--text); font-family:inherit;">
+                <button onclick="exportarBackup()" style="padding:9px 13px; border-radius:9px; border:1.5px solid var(--border); background:var(--surface); color:var(--text-2); font-size:.78em; font-weight:700; cursor:pointer; white-space:nowrap;">📤 Backup</button>
+                <label style="padding:9px 13px; border-radius:9px; border:1.5px solid var(--border); background:var(--surface); color:var(--text-2); font-size:.78em; font-weight:700; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center;">
+                    📥 Restaurar<input type="file" accept=".json" style="display:none;" onchange="importarBackup(event)">
+                </label>
+            </div>
             <div class="hist-body">
                 <div id="historico-lista"></div>
             </div>
@@ -747,6 +755,7 @@
             docAtual = tipo;
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
+            iniciarAutosave();
             
             ['div-processo', 'div-inscricao', 'div-zona', 'div-sublote', 'bloco-vistoria', 'bloco-construido', 'bloco-bic'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
@@ -808,6 +817,7 @@
                 toast('📋 Salvo no histórico automaticamente');
             }
             // Zera estado ANTES de limpar para evitar salvamentos fantasmas
+            pararAutosave();
             docAtual = '';
             historicIdAtivo = null;
             restaurando = false;
@@ -1151,15 +1161,95 @@
             atualizarContadores();
             toast('📋 Salvo no histórico!');
         }
+        // =========================================================
+        // AUTOSAVE a cada 2 minutos
+        // =========================================================
+        let _autosaveTimer = null;
+        function iniciarAutosave() {
+            pararAutosave();
+            _autosaveTimer = setInterval(() => {
+                if (docAtual && temDadosPreenchidos() && !restaurando) {
+                    _salvarOuAtualizar();
+                    atualizarContadores();
+                    toast('💾 Rascunho salvo automaticamente', 1800);
+                }
+            }, 2 * 60 * 1000);
+        }
+        function pararAutosave() {
+            if (_autosaveTimer) { clearInterval(_autosaveTimer); _autosaveTimer = null; }
+        }
+
+        // =========================================================
+        // BACKUP E RESTAURAÇÃO COMPLETOS
+        // =========================================================
+        function exportarBackup() {
+            const hist = localStorage.getItem('semplan_historico') || '[]';
+            const prefs = localStorage.getItem('semplan_prefs') || '{}';
+            const backup = JSON.stringify({ versao: 1, data: new Date().toISOString(), historico: JSON.parse(hist), prefs: JSON.parse(prefs) }, null, 2);
+            const blob = new Blob([backup], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            const d = new Date().toLocaleDateString('pt-BR').replace(/[/]/g, '-');
+            a.download = 'Backup_SEMPLAN_' + d + '.json';
+            a.click();
+            toast('📤 Backup exportado!');
+        }
+
+        function importarBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.historico) throw new Error('inválido');
+                    const local = JSON.parse(localStorage.getItem('semplan_historico') || '[]');
+                    const qtdAtual = local.length;
+                    const msg = qtdAtual > 0
+                        ? 'Restaurar backup com ' + data.historico.length + ' vistorias?\nOs ' + qtdAtual + ' registros atuais serão MESCLADOS (sem apagar).'
+                        : 'Restaurar backup com ' + data.historico.length + ' vistorias?';
+                    if (!confirm(msg)) return;
+                    const localIds = new Set(local.map(function(h){ return h.id; }));
+                    const novos = data.historico.filter(function(h){ return !localIds.has(h.id); });
+                    const merged = local.concat(novos).sort(function(a,b){ return b.id - a.id; });
+                    if (merged.length > 50) merged.splice(50);
+                    localStorage.setItem('semplan_historico', JSON.stringify(merged));
+                    if (data.prefs) localStorage.setItem('semplan_prefs', JSON.stringify(data.prefs));
+                    aplicarPrefs();
+                    atualizarContadores();
+                    renderHistorico();
+                    toast('📥 Backup restaurado! +' + novos.length + ' vistorias adicionadas.');
+                } catch(err) { toast('⚠️ Arquivo de backup inválido'); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
 
         function abrirHistorico() {
+            const busca = document.getElementById('hist-busca');
+            if (busca) busca.value = '';
+            document.getElementById('historico-panel').classList.remove('hidden');
+            renderHistorico();
+        }
+
+        function renderHistorico() {
             const hist = JSON.parse(localStorage.getItem('semplan_historico') || '[]');
             const lista = document.getElementById('historico-lista');
             const tipoLabel = { vazio:'Terreno Vazio', construido:'Terreno Construído', vistoria:'Vistoria Fiscal', bic:'BIC', termo:'Termo Conclusão' };
-            if (hist.length === 0) {
-                lista.innerHTML = `<div class="hist-vazio"><span class="hist-vazio-icon">📭</span>Nenhuma vistoria salva ainda.<br>Preencha um formulário e clique em "📋 Histórico".</div>`;
+            const q = (document.getElementById('hist-busca')?.value || '').toLowerCase().trim();
+            const filtrado = q ? hist.filter(h =>
+                (h.proprietario||'').toLowerCase().includes(q) ||
+                (h.lote||'').toLowerCase().includes(q) ||
+                (h.endereco||'').toLowerCase().includes(q) ||
+                (h.data||'').toLowerCase().includes(q) ||
+                (tipoLabel[h.tipo]||'').toLowerCase().includes(q)
+            ) : hist;
+            if (filtrado.length === 0) {
+                lista.innerHTML = q
+                    ? `<div class="hist-vazio"><span class="hist-vazio-icon">🔍</span>Nenhum resultado para "${q}".</div>`
+                    : `<div class="hist-vazio"><span class="hist-vazio-icon">📭</span>Nenhuma vistoria salva ainda.<br>Preencha um formulário e clique em "📋 Histórico".</div>`;
             } else {
-                lista.innerHTML = hist.map(h => `
+                lista.innerHTML = filtrado.map(h => `
                     <div class="hist-item" style="${h.id === historicIdAtivo ? 'border-color:var(--blue);background:var(--blue-lt);' : ''}">
                         <div><span class="hist-tipo-badge">${tipoLabel[h.tipo] || h.tipo}</span></div>
                         <div class="hist-item-info">
@@ -1174,7 +1264,6 @@
                         </div>
                     </div>`).join('');
             }
-            document.getElementById('historico-panel').classList.remove('hidden');
         }
 
         function fecharHistorico() {
@@ -1199,7 +1288,7 @@
             hist = hist.filter(h => h.id !== id);
             localStorage.setItem('semplan_historico', JSON.stringify(hist));
             if (historicIdAtivo === id) historicIdAtivo = null;
-            abrirHistorico();
+            renderHistorico();
             atualizarContadores();
             toast('🗑️ Removido do histórico');
         }
@@ -1306,7 +1395,8 @@
             }
             const lat = val('gps-lat'), lng = val('gps-lng');
             if(lat && lng) {
-                html += `<tr><td colspan="4">📍 <b>Coordenadas GPS:</b> Lat ${lat} | Long ${lng} &nbsp;&nbsp; <a href="https://maps.google.com/?q=${lat},${lng}" style="color:#003366;">Ver no Mapa</a></td></tr>`;
+                const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+                html += `<tr><td colspan="3">📍 <b>Coordenadas GPS:</b> Lat ${lat} | Long ${lng}<br><small style="color:#555;">${mapsUrl}</small></td><td style="text-align:center; padding:4px;"><div id="pdf-qrcode" style="display:inline-block;"></div></td></tr>`;
             }
             html += `</table>`;
 
@@ -1376,6 +1466,23 @@
 
             // INJETA TUDO
             document.getElementById('pdf-conteudo').innerHTML = html;
+
+            // QR CODE — gerado após injetar o HTML (o elemento #pdf-qrcode precisa existir no DOM)
+            const qrEl = document.getElementById('pdf-qrcode');
+            if (qrEl) {
+                qrEl.innerHTML = '';
+                const _lat = val('gps-lat'), _lng = val('gps-lng');
+                if (_lat && _lng && typeof QRCode !== 'undefined') {
+                    try {
+                        new QRCode(qrEl, {
+                            text: 'https://maps.google.com/?q=' + _lat + ',' + _lng,
+                            width: 80, height: 80,
+                            colorDark: '#000000', colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
+                    } catch(e) { qrEl.innerHTML = ''; }
+                }
+            }
             document.getElementById('pdf-data').innerText = new Date().toLocaleDateString('pt-BR');
             // Nome do fiscal nas preferências
             const prefs = JSON.parse(localStorage.getItem('semplan_prefs') || '{}');
